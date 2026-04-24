@@ -1,0 +1,8 @@
+pdfplumber
+PyMuPDF
+pdf2image
+pytesseract
+Pillow
+notebook
+ipykernel
+requests
