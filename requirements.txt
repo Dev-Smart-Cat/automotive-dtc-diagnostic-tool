@@ -6,3 +6,7 @@ Pillow
 notebook
 ipykernel
 requests
+psycopg2
+python-dotenv
+pandas
+streamlit
