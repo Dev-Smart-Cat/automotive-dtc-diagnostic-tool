@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 # Read variavles from a .env files and sets them in os.environ.
 # Path.cwd(): standard Python library used to read the relative path from .env 
-load_dotenv(Path(__file__).parent / ".env", override=True)
+load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
 # ---------------- UI -------------------------
 # Call the function to render the UI
