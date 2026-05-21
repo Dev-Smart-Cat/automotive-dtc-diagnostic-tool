@@ -112,7 +112,7 @@ def extract_from_pdf(url):
 
     # group(1): returns the 2nd part of the string, which is end of the string
     # and remove the spaces
-    orig_dtc_field_string = orig_dtc_field_raw_string.group(1).strip()
+    orig_dtc_field_string = orig_dtc_field_raw_string.group(1).strip() if orig_dtc_field_raw_string else "no data extracted"
 
     # re.findall(): return a list with all DTCs found inside the string
     orig_dtcs_match = re.findall(r'[PCBU][0-9A-F]{4}', orig_dtc_field_string, re.IGNORECASE)
@@ -132,7 +132,7 @@ def extract_from_pdf(url):
     ocr_text_page2 = pytesseract.image_to_string(images_page2[0])
     
     fs1_dtc_field_raw_string = re.search(r'Error codes with.*?MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)', ocr_text_page2, re.DOTALL)
-    fs1_dtc_field_string = fs1_dtc_field_raw_string.group(1).strip()
+    fs1_dtc_field_string = fs1_dtc_field_raw_string.group(1).strip() if fs1_dtc_field_raw_string else "no data extracted"
 
     # Fallback dpi=100 when field content was not captured
     if "Any Key Instructions" in fs1_dtc_field_string:
@@ -140,7 +140,7 @@ def extract_from_pdf(url):
         images_page2 = convert_from_bytes(pdf_bytes.read(), first_page=2, last_page=2, dpi=100)
         ocr_text_page2 = pytesseract.image_to_string(images_page2[0])
         fs1_dtc_field = re.search(r'Error codes with.*?MODULE[^\n]*:\n{1,2}(.*?)(?=\n\n|\Z)', ocr_text_page2, re.DOTALL)
-        fs1_dtc_field_string = fs1_dtc_field.group(1).strip()
+        fs1_dtc_field_string = fs1_dtc_field.group(1).strip() if fs1_dtc_field else "no data extracted"
 
         # Fallback dpi=200 when field content still not captured
         if "Any Key Instructions" in fs1_dtc_field_string:
@@ -148,7 +148,7 @@ def extract_from_pdf(url):
             images_page2 = convert_from_bytes(pdf_bytes.read(), first_page=2, last_page=2, dpi=200)
             ocr_text_page2 = pytesseract.image_to_string(images_page2[0])
             fs1_dtc_field = re.search(r'Error codes with.*?MODULE[^\n]*:\n{1,2}(.*?)(?=\n\n|\Z)', ocr_text_page2, re.DOTALL)
-            fs1_dtc_field_string = fs1_dtc_field.group(1).strip()
+            fs1_dtc_field_string = fs1_dtc_field.group(1).strip() if fs1_dtc_field else "no data extracted" 
 
     fs1_dtcs_match = re.findall(r'[PCBU][0-9A-F]{4}', fs1_dtc_field_string, re.IGNORECASE)
 
@@ -279,11 +279,15 @@ def render_ui(extract_from_pdf, query_descriptions, automaker_db_tables_names_di
             st.warning("Please enter a PDF URL.")
         else:
             # Display progress
-            with st.spinner("Extracting..."): 
-                make_name, orig_dtc, fs1_dtc = extract_from_pdf(url)            # Call the function to extract PDF content
-                # Query db only when dtcs were found
-                orig_dtc_descriptions = query_descriptions(make_name, orig_dtc, automaker_db_tables_names_dict)
-                fs1_dtc_descriptions = query_descriptions(make_name, fs1_dtc, automaker_db_tables_names_dict)
+            with st.spinner("Extracting..."):
+                try:
+                    make_name, orig_dtc, fs1_dtc = extract_from_pdf(url)            # Call the function to extract PDF content
+                    # Query db only when dtcs were found
+                    orig_dtc_descriptions = query_descriptions(make_name, orig_dtc, automaker_db_tables_names_dict)
+                    fs1_dtc_descriptions = query_descriptions(make_name, fs1_dtc, automaker_db_tables_names_dict)
+                except Exception as e:
+                    st.error(f"Error: {e}")
+                    st.stop()
 
             st.subheader(f"Automaker: {make_name}")         # Display subheader
 
