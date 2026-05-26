@@ -252,7 +252,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     # Return a list with dtc descriptions
     return dtc_descriptions_list
 
-def insert_dtc(automaker, code, description):
+def insert_dtc(automaker, table_name, code, description):
     """
     Inserts a new DTC cpde and description into the specified table.
 
@@ -266,7 +266,7 @@ def insert_dtc(automaker, code, description):
     cur = conn.cursor()             # pyscopg2 object responsible for executing queries
     # Insert the data, where %s references each data from each column
     cur.execute(
-        f"INSERT INTO {automaker} (automaker, code, description) VALUES (%s, %s, %s)",
+        f"INSERT INTO {table_name} (automaker, code, description) VALUES (%s, %s, %s)",
         (automaker, code, description)
     )
     conn.commit()                   # Commit the query
