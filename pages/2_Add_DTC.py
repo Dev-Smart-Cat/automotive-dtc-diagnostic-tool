@@ -1,5 +1,6 @@
 import streamlit as st
-from utils import insert_dtc, automaker_db_tables_names_dict, extract_dtcs_from_file
+import pandas as pd
+from utils import insert_dtc, automaker_db_tables_names_dict, extract_dtcs_from_file, dtc_exists
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -24,9 +25,14 @@ if st.button("Add DTC", type="primary"):            # Button to update the db
             # List compreension for to confirm the get the table name based on the automaker given
             # next(): stops at the first result where v == automaker
             table_name = next(k for k, v in automaker_db_tables_names_dict.items() if v == automaker)
-            # Call the function to update the db with the new dtc       
-            insert_dtc(automaker, table_name, code.strip().upper(), desc.strip())
-            st.success(f"{code.upper()} added to {table_name} sucessfully!")
+
+            # Check if the DTC already exists before inserting
+            if dtc_exists(table_name, code.strip()):
+                st.warning(f"{code.upper()} already exists in {table_name}.")
+            else:
+                # Call the function to update the db with the new dtc       
+                insert_dtc(automaker, table_name, code.strip().upper(), desc.strip())
+                st.success(f"{code.upper()} added to {table_name} sucessfully!")
         except Exception as e:
             st.error(f"Error inserting DTC: {e}")
 
@@ -56,13 +62,18 @@ if uploaded_file and st.button("Extract from PDF"):
 
 if "bulk_dtcs" in st.session_state:
     st.write(f"Found {len(st.session_state['bulk_dtcs'])} DTCs:")
-    st.dataframe(st.session_state["bulk_dtcs"])         # Show the table to be checked
+
+    df = pd.DataFrame(st.session_state["bulk_dtcs"])
+    df.insert(0, "skip", False)         # Checkboc column - True = skip, False = insert
+
+    edited_df = st.data_editor(df, use_container_width=True)
 
     if st.button("Insert All into Database", type="primary"):
         try:
-            for dtc in st.session_state["bulk_dtcs"]:
-                insert_dtc(bulk_automaker, st.session_state["bulk_table"], dtc["code"], dtc["description"])
-            st.success(f"{len(st.session_state['bulk_dtcs'])} DTCs inserted sucessfully!")
-            del st.session_state["bulk_dtcs"]       # Clean the session state after dtcs insertion
+            to_insert = edited_df[edited_df["skip"] == False]       # Filter out checked rows
+            for _, row in to_insert.iterrows():
+                insert_dtc(bulk_automaker, st.session_state["bulk_table"], row["code"], row["description"])
+            st.success(f"{len(to_insert)} DTCs inserted successfully!")
+            del st.session_state["bulk_dtcs"]
         except Exception as e:
             st.error(f"Error: {e}")

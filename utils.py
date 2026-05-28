@@ -254,13 +254,22 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
 
 def insert_dtc(automaker, table_name, code, description):
     """
-    Inserts a new DTC cpde and description into the specified table.
+    Inserts a new DTC code and description into the specified table.
+    Skips insertion if the code already exists in the table.
 
     Args:
-        table (str): PostgreSQL table name (e.g. 'generic_dtcs')
+        automaker (str): Automaker name.
+        table_name (str): PostgreSQL table name (e.g. 'generic_dtcs')
         code (str): DTC code (e.g 'U0100')
         description (str): DTC description
+
+    Returns:
+        bool: True if inserted, False if code already exists.
     """
+    
+    # Check if the DTC already exists before inserting
+    if dtc_exists(table_name, code):
+        return False
     
     conn = db_connection()          # Create a object connection
     cur = conn.cursor()             # pyscopg2 object responsible for executing queries
@@ -274,6 +283,7 @@ def insert_dtc(automaker, table_name, code, description):
     # Close the db connection
     cur.close()
     conn.close()
+    return True
 
 def extract_dtcs_from_file(pdf_file):
     """
@@ -291,3 +301,22 @@ def extract_dtcs_from_file(pdf_file):
         for code, description in matches:
             dtcs.append({"code": code.upper(), "description": description.strip()})
     return dtcs
+
+def dtc_exists(table, code):
+    """
+    Checks if a DTC code already exists in the specified table.
+
+    Returns:
+        bool: True if the code exists, False otherwise.
+    """
+    conn = db_connection()
+    cur = conn.cursor()
+    # SELECT 1 return literal 1 when the code exists
+    cur.execute(
+        f"SELECT 1 FROM {table} WHERE LOWER (code) = LOWER(%s)",
+        (code,)
+    )
+    result = cur.fetchone()     # Retrieves the first row returned by the query
+    cur.close()
+    conn.close()
+    return result is not None   # Return False when the code does not exist
