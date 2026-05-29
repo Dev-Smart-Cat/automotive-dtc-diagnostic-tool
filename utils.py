@@ -252,54 +252,71 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     # Return a list with dtc descriptions
     return dtc_descriptions_list
 
-def render_ui(extract_from_pdf, query_descriptions, automaker_db_tables_names_dict):
+def insert_dtc(automaker, table_name, code, description):
     """
-    Renders the Streamlit user interfave for the DTC Form Extractor.
-    Provides a text input for the PDF URL and an Extract button that triggers
-    PDF extraction and database queries then displays the automaker name,
-    original module DTCs and Flagship One module DTCs with their descriptions.
+    Inserts a new DTC code and description into the specified table.
+    Skips insertion if the code already exists in the table.
 
     Args:
-        extract_from_pdf (callable): Function that downloads and OCR-processes the PDF.
-        query_descriptions: (callable): Function that queries DTC descriptions from the database.
-        automaker_db_tables_names_dtc (dict): Mapping of PostgreSQL table names to automaker display names.
+        automaker (str): Automaker name.
+        table_name (str): PostgreSQL table name (e.g. 'generic_dtcs')
+        code (str): DTC code (e.g 'U0100')
+        description (str): DTC description
+
+    Returns:
+        bool: True if inserted, False if code already exists.
     """
+    
+    # Check if the DTC already exists before inserting
+    if dtc_exists(table_name, code):
+        return False
+    
+    conn = db_connection()          # Create a object connection
+    cur = conn.cursor()             # pyscopg2 object responsible for executing queries
+    # Insert the data, where %s references each data from each column
+    cur.execute(
+        f"INSERT INTO {table_name} (automaker, code, description) VALUES (%s, %s, %s)",
+        (automaker, code, description)
+    )
+    conn.commit()                   # Commit the query
+    
+    # Close the db connection
+    cur.close()
+    conn.close()
+    return True
 
-    st.title("DTC Form Extractor")
+def extract_dtcs_from_file(pdf_file):
+    """
+    Extracts DTC codes and descriptions from an uploaded PDF file via OCR.
+    Expects each line in format: CODE Description (e.g. P0100 Mass Air Flow Sensor)
 
-    # Text box to input the PDF link
-    url = st.text_input("PDF URL", placeholder="Paste the PDF link here...")
+    Returns:
+        list[dict]: List of dicts with keys 'code' and 'description'.
+    """
+    images = convert_from_bytes(pdf_file.read(), dpi=300)
+    dtcs = []
+    for image in images:
+        text = pytesseract.image_to_string(image)
+        matches = re.findall(r'([PCBU][0-9A-F]{4})\s+(.+)', text, re.IGNORECASE)
+        for code, description in matches:
+            dtcs.append({"code": code.upper(), "description": description.strip()})
+    return dtcs
 
-    # Button to press after past the PDF link
-    if st.button("Extract", type="primary"):
+def dtc_exists(table, code):
+    """
+    Checks if a DTC code already exists in the specified table.
 
-        # Condition when the button is pressed and no PDF link present.
-        # Otherwise start PDF extraction
-        if not url.strip():
-            st.warning("Please enter a PDF URL.")
-        else:
-            # Display progress
-            with st.spinner("Extracting..."):
-                try:
-                    make_name, orig_dtc, fs1_dtc = extract_from_pdf(url)            # Call the function to extract PDF content
-                    # Query db only when dtcs were found
-                    orig_dtc_descriptions = query_descriptions(make_name, orig_dtc, automaker_db_tables_names_dict)
-                    fs1_dtc_descriptions = query_descriptions(make_name, fs1_dtc, automaker_db_tables_names_dict)
-                except Exception as e:
-                    st.error(f"Error: {e}")
-                    st.stop()
-
-            st.subheader(f"Automaker: {make_name}")         # Display subheader
-
-            # Original dtcs section
-            st.markdown("**Original DTCs**")
-            # Condition to confirm whether the dtc descriptions is a list.
-            # When it is a list, join the code and their descriptions.
-            # When it is not a list, assign the literal string to orig_dtc_lines variable to be displayed
-            orig_dtc_lines = "\n".join(f"{d['code']} {d['description']}" for d in orig_dtc_descriptions) if isinstance(orig_dtc_descriptions, list) else (orig_dtc_descriptions or "no dtcs")
-            st.code(orig_dtc_lines, language=None)  # Display original dtcs and descriptions in a box
-
-            # FS1 dtcs section
-            st.markdown("**FS1 DTCs**")
-            fs1_dtc_lines = "\n".join(f"{d['code']} {d['description']}" for d in fs1_dtc_descriptions) if isinstance(fs1_dtc_descriptions, list) else (fs1_dtc_descriptions or "no dtcs")
-            st.code(fs1_dtc_lines, language=None)  # Display fs1 dtcs and descriptions in a box
+    Returns:
+        bool: True if the code exists, False otherwise.
+    """
+    conn = db_connection()
+    cur = conn.cursor()
+    # SELECT 1 return literal 1 when the code exists
+    cur.execute(
+        f"SELECT 1 FROM {table} WHERE LOWER (code) = LOWER(%s)",
+        (code,)
+    )
+    result = cur.fetchone()     # Retrieves the first row returned by the query
+    cur.close()
+    conn.close()
+    return result is not None   # Return False when the code does not exist
