@@ -320,3 +320,40 @@ def dtc_exists(table, code):
     cur.close()
     conn.close()
     return result is not None   # Return False when the code does not exist
+
+def query_dtc_by_code(code):
+    """
+    Searches all automaker tables for a given DTC code.
+    Groups results by unique descriptions, listing which tables share each description.
+
+    Returns:
+        list[dict]: Each dict has 'code', 'description', 'tables' (list of table names).
+    """
+    conn = db_connection()
+    cur = conn.cursor()
+
+
+    grouped = {}    # Append to the dict key: description, value: list of table names
+
+    # Loop to iterate over the all tables on the database
+    for table_name in automaker_db_tables_names_dict.keys():
+        cur.execute(
+            f"SELECT code, description FROM {table_name} WHERE LOWER(code) = LOWER(%s)",
+            (code,)
+        )
+        row = cur.fetchone()    # Retrieves the first row return by the query 
+        # If row is not None, assign the description (index 1) to desc.
+        if row:     
+            desc = row[1]
+            # Condition to confirm the description is not in the dict
+            if desc not in grouped:
+                # If this description is not yet in grouped dict, initialize it with code,
+                # description and empty tables list
+                grouped[desc] = {"code": row[0], "description": desc, "tables": []}
+            # Append the current table_name to the tables list for its description
+            grouped[desc]["tables"].append(table_name)
+
+    cur.close()
+    conn.close()
+    # Return a list of dicts, each with code, description and tables list
+    return list(grouped.values())

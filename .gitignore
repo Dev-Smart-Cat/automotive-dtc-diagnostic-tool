@@ -6,3 +6,6 @@
 
 # Ignoring pycache
 __pycache__/
+
+# Ignoring the notebooks, as they are used for testing
+notebooks/
