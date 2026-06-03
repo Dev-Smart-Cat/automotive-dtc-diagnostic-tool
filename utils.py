@@ -357,3 +357,30 @@ def query_dtc_by_code(code):
     conn.close()
     # Return a list of dicts, each with code, description and tables list
     return list(grouped.values())
+
+def delete_dtc(table_name, dtc):
+    """
+    Deletes a DTC code from the specified table.
+
+    Args:
+        table_name (str): PostgreSQL table name (e.g. 'generic_dtcs').
+
+    Returns:
+        bool: True if deleted, False if code was not found.
+    """
+    # Condition to confirm whether the entered dtc exists in the database,
+    # and return False when does not exist
+    if not dtc_exists(table_name, dtc):
+        return False
+    
+    conn = db_connection()      # Create an object connection
+    cur = conn.cursor()         # psycopg object responsible for executing the query
+    # Command to execute the deletion
+    cur.execute(
+        f"DELETE FROM {table_name} WHERE LOWER(code) = LOWER(%s)",
+        (dtc,)
+    )
+    conn.commit()   # Commit the deletion command
+    cur.close()
+    conn.close()
+    return True

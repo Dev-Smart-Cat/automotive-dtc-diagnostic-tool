@@ -1,10 +1,13 @@
 import streamlit as st
 import pandas as pd
-from utils import insert_dtc, automaker_db_tables_names_dict, extract_dtcs_from_file, dtc_exists
+from utils import insert_dtc, automaker_db_tables_names_dict, extract_dtcs_from_file, dtc_exists, delete_dtc
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)       # Load the .env from the project root
+
+
+#---------------------------Add a single DTC----------------------------#
 
 st.title("Add DTC")
 
@@ -36,7 +39,7 @@ if st.button("Add DTC", type="primary"):            # Button to update the db
         except Exception as e:
             st.error(f"Error inserting DTC: {e}")
 
-#---------------------------PDF Extract from PDF file----------------------------#
+#---------------------------DTCs Extraction from PDF file----------------------------#
 
 st.divider()
 st.subheader("Bulk Import from PDF")
@@ -75,5 +78,37 @@ if "bulk_dtcs" in st.session_state:
                 insert_dtc(bulk_automaker, st.session_state["bulk_table"], row["code"], row["description"])
             st.success(f"{len(to_insert)} DTCs inserted successfully!")
             del st.session_state["bulk_dtcs"]
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+#---------------------------Delete DTC----------------------------#
+
+st.divider()
+
+st.subheader("Delete DTC")
+
+# Initialize session_state for delete automaker selectbox
+if "delete_automaker" not in st.session_state:
+    st.session_state["delete_automaker"] = automaker[0]
+
+
+delete_automaker = st.selectbox("Automaker", automakers, key="delete_automaker")            # Display the automaker name, which point to the table name
+delete_code = st.text_input("DTC to delete", placeholder="e.g. U0100", key="delete_code")   # Text input for the dtc number
+
+# Button to execute the query deletion
+if st.button("Delete DTC", type="primary"):
+    if not delete_code.strip():     # Condition when no dtc was entered
+        st.warning("Please enter a DTC code.")
+    else:
+        # Error handling when errors occur
+        try:
+            table_name = next(k for k, v in automaker_db_tables_names_dict.items() if v == delete_automaker)
+            deleted = delete_dtc(table_name, delete_code.strip())       # Call the function to delete the dtc
+            # Condition to display a success message when deleted,
+            # otherwise display a message the dtc was not found.
+            if deleted:
+                st.success(f"{delete_code.upper()} deleted from {table_name} successfully!")
+            else:
+                st.warning(f"{delete_code.upper()} not found in {table_name}")
         except Exception as e:
             st.error(f"Error: {e}")
