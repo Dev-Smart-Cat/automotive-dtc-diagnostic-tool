@@ -67,7 +67,7 @@ if "bulk_dtcs" in st.session_state:
     st.write(f"Found {len(st.session_state['bulk_dtcs'])} DTCs:")
 
     df = pd.DataFrame(st.session_state["bulk_dtcs"])
-    df.insert(0, "skip", False)         # Checkboc column - True = skip, False = insert
+    df.insert(0, "skip", False)         # Checkbox column - True = skip, False = insert
 
     edited_df = st.data_editor(df, use_container_width=True)
 
