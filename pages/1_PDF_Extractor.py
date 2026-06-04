@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)
 
 # ---------------- UI -------------------------
-st.title("DTC Form Extractor")
+st.title("PDF Form DTC Extractor")
 
 # Text box to input the PDF link
 url = st.text_input("PDF URL", placeholder="Paste the PDF link here...")
@@ -52,7 +52,7 @@ if "make_name" in st.session_state:
     st.code(orig_dtc_lines, language=None)  # Display original dtcs and descriptions in a box
 
     # FS1 dtcs section
-    st.markdown("**FS1 DTCs**")
+    st.markdown("**New DTCs**")
     fs1 = st.session_state["fs1_dtc_descriptions"]      # Retrieve the fs1 dtcs descriptions from session state
     fs1_dtc_lines = "\n".join(f"{d['code']} {d['description']}" for d in fs1) if isinstance(fs1, list) else (fs1 or "no dtcs")
     st.code(fs1_dtc_lines, language=None)  # Display fs1 dtcs and descriptions in a box
