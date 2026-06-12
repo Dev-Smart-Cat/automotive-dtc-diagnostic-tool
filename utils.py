@@ -435,7 +435,7 @@ def get_extraction_stats_by_date(date) -> dict:
         WHERE extracted_at = %s
         GROUP BY status
         """,
-        (date)
+        (date,)
     )
     rows = cur.fetchall()       # Fetch the data extracted
     cur.close()
