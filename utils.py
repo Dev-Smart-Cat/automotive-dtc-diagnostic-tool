@@ -384,3 +384,66 @@ def delete_dtc(table_name, dtc):
     cur.close()
     conn.close()
     return True
+
+def log_extraction(pdf_url: str, status: str, orig_wrong_data: str = None, fs1_wrong_data: str = None):
+    """
+    Save one row per PDF processed into the extraction_log table.
+
+    Args:
+        pdf_url (str): The PDF URL that was processed.
+        status (str): Extraction result - 'correct' if no fields were flagged,
+                      'incorrect' if at least one fields was flagged as wrong.
+        orig_wrong_data (str, optional): The Original DTCs text flagged as incorrectly
+                                         extracted. None if original was correct.
+        fs1_wrong_data (str, optional): The FS1 DTCs text flagged as incorrectly
+                                        extracted. None if fs1 was correct.
+
+    Returns:
+        None
+    """
+    conn = db_connection()
+    cur = conn.cursor()
+    cur.execute(            # SQL command to store the PDF extraction stats
+        """
+        INSERT INTO extraction_log (extracted_at, pdf_url, status, orig_wrong_data, fs1_wrong_data)
+        VALUES (CURRENT_DATE, %s, %s, %s, %s)
+        """,
+        (pdf_url, status, orig_wrong_data, fs1_wrong_data)
+    )
+    conn.commit()   # Commit the SQL command
+    cur.close()
+    conn.close()
+
+def get_extraction_stats_by_date(date) -> dict:
+    """
+    Return correct and incorrect extraction counts for a given date.
+
+    Queries extraction log grouped by status for the provided date.
+    Used to display daily performance statistics on the PDF Extractor page.
+
+    Args:
+        date (datetime.date): The date to filter extractions by.
+
+    Returns:
+        dict: {'correct': int, 'incorrect': int}
+    """
+    conn = db_connection()
+    cur = conn.cursor()
+    cur.execute(        # SQL command to count the status column
+        """
+        SELECT status, COUNT(*) FROM extraction_log
+        WHERE extracted_at = %s
+        GROUP BY status
+        """,
+        (date,)
+    )
+    rows = cur.fetchall()       # Fetch the data extracted
+    cur.close()
+    conn.close()
+    stats = {"correct": 0, "incorrect": 0}      # Dictionary to append the status results
+    # Loop to iterate over fetched rows
+    for status, count in rows:
+        if status in stats:
+            stats[status] = count       # Count each status and append to the dict
+    # Return the stats dict
+    return stats
