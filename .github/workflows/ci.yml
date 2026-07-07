@@ -54,4 +54,4 @@ jobs:
             # --max-line-length=120: allows lines up to 120 chars (default is 79, too strict for real projects)
             # --exclude=.git: skip the git internals folder
             - name: Lint with flake8
-              run: flake8 . --max-line-lenght=120 --exclude=.git
+              run: flake8 . --max-line-length=120 --exclude=.git
