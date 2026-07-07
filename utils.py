@@ -4,7 +4,6 @@ import os
 import requests
 import psycopg2 as pg
 import pytesseract
-import streamlit as st
 from pdf2image import convert_from_bytes
 
 
