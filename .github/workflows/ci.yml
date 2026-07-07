@@ -44,6 +44,6 @@ jobs:
                python -m py_compile utils.py
                python -m py_compile pages/1_PDF_Extractor.py
                python -m py_compile pages/2_Add_DTC.py
-               python -m pages/3_DTC_Research.py
-               python -m pages/4_Statistics.py
+               python -m py_compile pages/3_DTC_Research.py
+               python -m py_compile pages/4_Statistics.py
                echo "All files passed syntax check"
