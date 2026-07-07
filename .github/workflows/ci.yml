@@ -1,0 +1,57 @@
+# The display name shown in the GitHub Actions tab on github.com
+name: CI Pipeline
+
+# on: run when pushed to the main branch and
+# run when Pull Request targets the main branch
+on:
+    push:
+        branches: [main] # runs when pushed to main branch
+    pull_request:
+        branches: [main] # run when Pull request to main branch
+
+
+# jobs contains everything that runs.
+jobs:
+
+    build:
+        
+        runs-on: ubuntu-latest  # The OS the VM GitHub creates
+
+        steps:
+
+            # Step 1: download the code onto the VM
+            # Without this part, the VM has no idea my code exists
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+
+            # Step 2: Install Python on the VM
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: "3.11"
+                cache: "pip"           # Caches downloaded packages
+
+            # Step 3: Install project's dependencies
+            # "run" executes a shell command like on local terminal
+            - name: Install dependencies
+              run: pip install -r requirements.txt
+
+            # Step 4: Verify all .py files have valid syntax
+            # py_compile is built into Python no extra install needed
+            - name: Check Python syntax
+              run: |
+               python -m py_compile app.py
+               python -m py_compile utils.py
+               python -m py_compile pages/1_PDF_Extractor.py
+               python -m py_compile pages/2_Add_DTC.py
+               python -m py_compile pages/3_DTC_Research.py
+               python -m py_compile pages/4_Statistics.py
+               echo "All files passed syntax check"
+
+            # Step 5: Lint the code base with flake8, meaning check the code best practices
+            # flake8 checks for code style issues and common mistakes
+            # --max-line-length=120: allows lines up to 120 chars (default is 79, too strict for real projects)
+            # --exclude=.git: skip the git internals folder
+            - name: Lint with flake8
+              run: flake8 . --max-line-length=120 --exclude=.git
