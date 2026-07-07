@@ -1,4 +1,5 @@
-from utils import *
+import streamlit as st
+from utils import log_extraction, extract_from_pdf, query_descriptions, automaker_db_tables_names_dict
 from pathlib import Path
 from dotenv import load_dotenv
 
