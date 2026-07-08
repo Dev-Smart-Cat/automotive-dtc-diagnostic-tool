@@ -29,5 +29,8 @@ if st.button("Search", type="primary"):
             st.info(f"{dtc.upper()} not found in any table.")
         else:
             for r in results:
-                st.code(f"{r['code']} {r['description']}", language=None)       # Display the dtc and description
-                st.caption(f"Found in: {', '.join(r['tables'])}")               # Display the table name (s) the dtc comes from
+                # Display the dtc and description
+                st.code(f"{r['code']} {r['description']}", language=None)
+                # Display the table name (s) the dtc comes from
+                st.caption(f"Found in: {', '.join(r['tables'])}")
+                

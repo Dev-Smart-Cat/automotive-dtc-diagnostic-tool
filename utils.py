@@ -50,7 +50,6 @@ def db_connection():
 
     Returns:
         psycopg2.connection: Active database connection object.
-    
     """
 
     # Return a object connection with the database from the env vars
@@ -76,7 +75,7 @@ def extract_from_pdf(url):
             - fs1_dtcs (list | str): List of DTC codes from the Flagship One module, or "no dtcs".
     """
 
-    # Return the response of te link, 
+    # Return the response of te link,
     # 200: meaning it can be access
     # 404: failed to access the PDF
     response = requests.get(url)
@@ -87,7 +86,6 @@ def extract_from_pdf(url):
     pdf_bytes = io.BytesIO(response.content)
 
     # Page 1
-    
     # Automaker name extraction
     # Convert from BytesIO object to PIL.Image of page 1
     # dpi (Dots Per Inch): pixels density per inch when converting from image to PDF.
@@ -98,16 +96,18 @@ def extract_from_pdf(url):
     # Seach for the automake name in the page 1
     automake_match = re.search(r'VIN For Vehicle[^\n]*\n.*?\d{4}(?!-)\s+([A-Za-z]+)', ocr_text_page1, re.DOTALL | re.IGNORECASE)
     # Condition to confirm the automaker name was captured
-    make_name = automake_match.group(1).strip() if automake_match else "Not Automaker"
+    make_name = (
+        automake_match.group(1).strip() 
+        if automake_match else "Not Automaker"
+        )
 
-    
     # DTC extraction
-
     orig_dtcs = None
 
     # Small letters -> use higher DPI -> more pixels per inch -> OCR reads correctly
     # Larger letters -> lower DPI is sufficient -> already enough pixels to recognize them
-    # DPI and letter size are inversely proportional - the smaller the test, the higher the DPI needed to capture it accurately.
+    # DPI and letter size are inversely proportional - the smaller the test,
+    # the higher the DPI needed to capture it accurately.
     for dpi in [600, 200, 100]:
         # Return to the beginning of the page
         pdf_bytes.seek(0)
@@ -126,12 +126,9 @@ def extract_from_pdf(url):
     # re.findall(): return a list with all DTCs found inside the string
     orig_dtcs_match = re.findall(r'[PCBU][0-9A-F]{4}', orig_dtc_field_string, re.IGNORECASE)
     # Condition to get the 2nd part of the string if text was captured
-    
     orig_dtcs = orig_dtcs_match if orig_dtcs_match else orig_dtc_field_string
      
-
     # Page 2
-
     # Scalability performance O(1), meaning iterate over the dpi list once (1) until valid content is captured 
     for dpi in [600, 200, 100]:
         pdf_bytes.seek(0)
@@ -139,29 +136,33 @@ def extract_from_pdf(url):
         ocr_text_page2 = pytesseract.image_to_string(images_page2[0])
         # regex pattern:
         # "Error codes with": literal text, matching exactly those characters
-        # . matches any character except newline, * zero or more times, ? matches a few characters as possible
+        # . matches any character except newline, * zero or more times, 
+        # ? matches a few characters as possible
         # .*?: matches anything between the strings "Error codes with" and "MODULE" minimally
         # [^\n]: macthes the rest of the lines after "MODULE", without crossing to the next line
         # : literal colon
         # \n\n: two new line characters between the field name and the content
         # (.*?): capture any character in the group ()
-        # (?=\n\n|\Z): (?=) checks what comes next without consuming it, \n\n two blank lines, | or, \Z end of string
+        # (?=\n\n|\Z): (?=) checks what comes next without consuming it, \n\n two blank lines, 
+        # | or, \Z end of string
         # (?=\n\n|Z): stops capturing text when tow lines are found or at the end of string \Z
         fs1_dtc_field_raw_string = re.search(r'Error codes with.*?MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)', ocr_text_page2, re.DOTALL)
-        fs1_dtc_field_string = fs1_dtc_field_raw_string.group(1).strip() if fs1_dtc_field_raw_string else "no data extracted"
+        fs1_dtc_field_string = (
+            fs1_dtc_field_raw_string.group(1).strip() 
+            if fs1_dtc_field_raw_string else "no data extracted"
+        )
         if "Any Key Instructions" not in fs1_dtc_field_string:
-            break   # Valid content found - stop iterate on the dpi list 
-
+            # Valid content found - stop iterate on the dpi list
+            break 
 
     fs1_dtcs_match = re.findall(r'[PCBU][0-9A-F]{4}', fs1_dtc_field_string, re.IGNORECASE)
 
     if fs1_dtcs_match:
         # group(1): returns the 2nd part of the string, which is end of the string
-        # and remove the spaces 
+        # and remove the spaces
         fs1_dtcs = fs1_dtcs_match
     else:
         fs1_dtcs = fs1_dtc_field_string
-
 
     return make_name, orig_dtcs, fs1_dtcs
 
@@ -176,7 +177,6 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
         make_name (str): Automaker name used to identify the target database table.
         dtc_list (list | str): List of DTC code string to look up,
                                or a literal string when no valid DTCs were found.
-
     Returns:
         list[dict] | str: List of dicts with keys "code" and "description" for each DTC,
                           or the original literal string when dtc_list is not a list.
@@ -190,25 +190,31 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     # inherit the description from the last automaker table name
     automaker_table = None
 
-    # O(1) scalability performance, where iteration over the dict with name_table: make_name is done only once (1),
+    # O(1) scalability performance, where iteration over the dict with name_table: 
+    # make_name is done only once (1),
     # going straight to the value that matches the make_name selected.
     # Opposite method than iterate over the dict even after finding the value O(n)  
-    reverse_dict = {v.lower(): k for k, v in automaker_db_tables_names_dict.items() if make_name.lower() == v.lower()}
-    automaker_table = reverse_dict.get(make_name.lower())       # Get the make table 
+    reverse_dict = {
+        v.lower(): k for k, v in automaker_db_tables_names_dict.items() 
+        if make_name.lower() == v.lower()
+    }
+
+    # Get the make table
+    automaker_table = reverse_dict.get(make_name.lower())
 
     # Call the function to create db connection
     conn = db_connection()
     # psycopg2 object responsible for execute queries
     cur = conn.cursor()
 
-    # List to append the dtcs got from the db 
+    # List to append the dtcs got from the db
     dtc_descriptions_list = []
 
     # Iterate over the dtcs extracted from the PDF form to fetch their descriptions
     for dtc_code in dtc_list:
 
         # Reset the description variable to avoid this variable
-        # inherit the description from the last dtc 
+        # inherit the description from the last dtc
         description = None
 
         # Search in the automaker's table
@@ -225,7 +231,8 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
             db_result = cur.fetchone()
             # Condition to confirm if the dtc description was fetched
             if db_result:
-                # Assign the description value (first column of the returned row, which is tuple) to the variable
+                # Assign the description value (first column of the returned row, which is tuple) 
+                # to the variable
                 description = db_result[0]
 
         # Fallback: search in generic_dtcs
@@ -262,7 +269,6 @@ def insert_dtc(automaker, table_name, code, description):
         table_name (str): PostgreSQL table name (e.g. 'generic_dtcs')
         code (str): DTC code (e.g 'U0100')
         description (str): DTC description
-
     Returns:
         bool: True if inserted, False if code already exists.
     """
@@ -270,15 +276,17 @@ def insert_dtc(automaker, table_name, code, description):
     # Check if the DTC already exists before inserting
     if dtc_exists(table_name, code):
         return False
-    
-    conn = db_connection()          # Create a object connection
-    cur = conn.cursor()             # pyscopg2 object responsible for executing queries
+    # Create a object connection
+    conn = db_connection()
+    # pyscopg2 object responsible for executing queries
+    cur = conn.cursor()
     # Insert the data, where %s references each data from each column
     cur.execute(
         f"INSERT INTO {table_name} (automaker, code, description) VALUES (%s, %s, %s)",
         (automaker, code, description)
     )
-    conn.commit()                   # Commit the query
+    # Commit the query
+    conn.commit()
     
     # Close the db connection
     cur.close()
@@ -316,10 +324,12 @@ def dtc_exists(table, code):
         f"SELECT 1 FROM {table} WHERE LOWER (code) = LOWER(%s)",
         (code,)
     )
-    result = cur.fetchone()     # Retrieves the first row returned by the query
+    # Retrieves the first row returned by the query
+    result = cur.fetchone()
     cur.close()
     conn.close()
-    return result is not None   # Return False when the code does not exist
+    # Return False when the code does not exist
+    return result is not None
 
 def query_dtc_by_code(code):
     """
@@ -332,8 +342,8 @@ def query_dtc_by_code(code):
     conn = db_connection()
     cur = conn.cursor()
 
-
-    grouped = {}    # Append to the dict key: description, value: list of table names
+    # Append to the dict key: description, value: list of table names
+    grouped = {}
 
     # Loop to iterate over the all tables on the database
     for table_name in automaker_db_tables_names_dict.keys():
@@ -341,9 +351,10 @@ def query_dtc_by_code(code):
             f"SELECT code, description FROM {table_name} WHERE LOWER(code) = LOWER(%s)",
             (code,)
         )
-        row = cur.fetchone()    # Retrieves the first row return by the query 
+        # Retrieves the first row return by the query
+        row = cur.fetchone() 
         # If row is not None, assign the description (index 1) to desc.
-        if row:     
+        if row:
             desc = row[1]
             # Condition to confirm the description is not in the dict
             if desc not in grouped:
@@ -364,7 +375,6 @@ def delete_dtc(table_name, dtc):
 
     Args:
         table_name (str): PostgreSQL table name (e.g. 'generic_dtcs').
-
     Returns:
         bool: True if deleted, False if code was not found.
     """
@@ -373,14 +383,17 @@ def delete_dtc(table_name, dtc):
     if not dtc_exists(table_name, dtc):
         return False
     
-    conn = db_connection()      # Create an object connection
-    cur = conn.cursor()         # psycopg object responsible for executing the query
+    # Create an object connection
+    conn = db_connection()
+    # psycopg object responsible for executing the query
+    cur = conn.cursor()
     # Command to execute the deletion
     cur.execute(
         f"DELETE FROM {table_name} WHERE LOWER(code) = LOWER(%s)",
         (dtc,)
     )
-    conn.commit()   # Commit the deletion command
+    # Commit the deletion command
+    conn.commit()
     cur.close()
     conn.close()
     return True
@@ -397,20 +410,21 @@ def log_extraction(pdf_url: str, status: str, orig_wrong_data: str = None, fs1_w
                                          extracted. None if original was correct.
         fs1_wrong_data (str, optional): The FS1 DTCs text flagged as incorrectly
                                         extracted. None if fs1 was correct.
-
     Returns:
         None
     """
     conn = db_connection()
     cur = conn.cursor()
-    cur.execute(            # SQL command to store the PDF extraction stats
+    # SQL command to store the PDF extraction stats
+    cur.execute(
         """
         INSERT INTO extraction_log (extracted_at, pdf_url, status, orig_wrong_data, fs1_wrong_data)
         VALUES (CURRENT_DATE, %s, %s, %s, %s)
         """,
         (pdf_url, status, orig_wrong_data, fs1_wrong_data)
     )
-    conn.commit()   # Commit the SQL command
+    # Commit the SQL command
+    conn.commit()
     cur.close()
     conn.close()
 
@@ -423,7 +437,6 @@ def get_extraction_stats_by_date(date) -> dict:
 
     Args:
         date (datetime.date): The date to filter extractions by.
-
     Returns:
         dict: {'correct': int, 'incorrect': int}
     """
