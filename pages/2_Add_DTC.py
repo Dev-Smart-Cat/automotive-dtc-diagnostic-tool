@@ -6,9 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)       # Load the .env from the project root
 
-
 #---------------------------Add a single DTC----------------------------#
-
 st.title("Add DTC")
 
 # Build table options from the existing dict + generic
@@ -40,7 +38,6 @@ if st.button("Add DTC", type="primary"):            # Button to update the db
             st.error(f"Error inserting DTC: {e}")
 
 #---------------------------DTCs Extraction from PDF file----------------------------#
-
 st.divider()
 st.subheader("Bulk Import from PDF")
 
@@ -82,7 +79,6 @@ if "bulk_dtcs" in st.session_state:
             st.error(f"Error: {e}")
 
 #---------------------------Delete DTC----------------------------#
-
 st.divider()
 
 st.subheader("Delete DTC")
@@ -97,7 +93,8 @@ delete_code = st.text_input("DTC to delete", placeholder="e.g. U0100", key="dele
 
 # Button to execute the query deletion
 if st.button("Delete DTC", type="primary"):
-    if not delete_code.strip():     # Condition when no dtc was entered
+    # Condition when no dtc was entered
+    if not delete_code.strip():
         st.warning("Please enter a DTC code.")
     else:
         # Error handling when errors occur
