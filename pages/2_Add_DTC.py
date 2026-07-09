@@ -69,7 +69,7 @@ if "bulk_dtcs" in st.session_state:
 
     if st.button("Insert All into Database", type="primary"):
         try:
-            to_insert = edited_df[edited_df["skip"] == False]       # Filter out checked rows
+            to_insert = edited_df[~edited_df["skip"]]
             for _, row in to_insert.iterrows():
                 insert_dtc(bulk_automaker, st.session_state["bulk_table"], row["code"], row["description"])
             st.success(f"{len(to_insert)} DTCs inserted successfully!")
