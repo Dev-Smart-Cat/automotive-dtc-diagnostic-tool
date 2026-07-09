@@ -43,13 +43,13 @@ if st.button("Extract", type="primary"):
             # and the output should be:
             # P0000 Code 1\nP0001 Code 2
             prev_orig_lines = (
-                "\n".join(f"{d['code']} {d['description']}" for d in prev_orig) 
-                if isinstance(prev_orig, list) 
+                "\n".join(f"{d['code']} {d['description']}" for d in prev_orig)
+                if isinstance(prev_orig, list)
                 else (prev_orig or "no dtcs"))
-            
+
             prev_fs1_lines = (
-                "\n".join(f"{d['code']} {d['description']}" for d in prev_fs1) 
-                if isinstance(prev_fs1, list) 
+                "\n".join(f"{d['code']} {d['description']}" for d in prev_fs1)
+                if isinstance(prev_fs1, list)
                 else (prev_fs1 or "no dtcs"))
 
             # Condition to confirm when the checkboxes for wrong extraction is flagged,
@@ -70,11 +70,12 @@ if st.button("Extract", type="primary"):
         # Display progress
         with st.spinner("Extracting..."):
             try:
-                make_name, orig_dtc, fs1_dtc = extract_from_pdf(url)            # Call the function to extract PDF content
+                # Call the function to extract PDF content
+                make_name, orig_dtc, fs1_dtc = extract_from_pdf(url)
                 # Query db only when dtcs were found
                 orig_dtc_descriptions = query_descriptions(make_name, orig_dtc, automaker_db_tables_names_dict)
                 fs1_dtc_descriptions = query_descriptions(make_name, fs1_dtc, automaker_db_tables_names_dict)
-                
+
                 # Save the current sections with the automaker, original dtcs, fs1 dtcs
                 st.session_state["make_name"] = make_name
                 st.session_state["orig_dtc_descriptions"] = orig_dtc_descriptions
@@ -97,21 +98,21 @@ if "make_name" in st.session_state:
     # When it is a list, join the code and their descriptions.
     # When it is not a list, assign the literal string to orig_dtc_lines variable to be displayed
     orig_dtc_lines = (
-        "\n".join(f"{d['code']} {d['description']}" for d in orig) 
-        if isinstance(orig, list) 
+        "\n".join(f"{d['code']} {d['description']}" for d in orig)
+        if isinstance(orig, list)
         else (orig or "no dtcs"))
     
     fs1_dtc_lines = (
-        "\n".join(f"{d['code']} {d['description']}" for d in fs1) 
-        if isinstance(fs1, list) 
+        "\n".join(f"{d['code']} {d['description']}" for d in fs1)
+        if isinstance(fs1, list)
         else (fs1 or "no dtcs"))
 
     # Checkbox to flag when the data extracted was incorrect
     st.checkbox("Original DTCs incorrectly extracted", key="orig_wrong")
     st.markdown("**Original DTCs**")
-    st.code(orig_dtc_lines, language=None)  # Display original dtcs and descriptions in a box
+    st.code(orig_dtc_lines, language=None) # Display original dtcs and descriptions in a box
 
     st.checkbox("FS1 DTCs incorrectly extracted", key="fs1_wrong")
     st.markdown("**FS1 DTCs**")
-    st.code(fs1_dtc_lines, language=None)  # Display fs1 dtcs and descriptions in a box
+    st.code(fs1_dtc_lines, language=None) # Display fs1 dtcs and descriptions in a box
     
