@@ -63,6 +63,7 @@ def db_connection():
         password=os.getenv("PASSWORD")
     )
 
+
 def extract_from_pdf(url):
 
     """
