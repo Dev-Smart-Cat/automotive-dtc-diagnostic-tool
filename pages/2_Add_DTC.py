@@ -13,12 +13,13 @@ automakers = list(automaker_db_tables_names_dict.values())
 
 # Choose the automaker table name where the new dtc will be updated,
 # and two text input boxes
-automaker = st.selectbox("Automaker", automakers, key="automaker")           
+automaker = st.selectbox("Automaker", automakers, key="automaker")
 code = st.text_input("DTC", placeholder="e.g U0100")
 desc = st.text_input("DTC Description", placeholder="e.g. Lost Communication with ECM")
 
 if st.button("Add DTC", type="primary"):            # Button to update the db
-    if not code.strip() or not desc.strip():        # Condition to show a warning when the button was presses, but no DTC information was given
+    # Condition to show a warning when the button was presses, but no DTC information was given
+    if not code.strip() or not desc.strip():
         st.warning("Please fill in both fields.")
     else:
         try:
@@ -30,7 +31,7 @@ if st.button("Add DTC", type="primary"):            # Button to update the db
             if dtc_exists(table_name, code.strip()):
                 st.warning(f"{code.upper()} already exists in {table_name}.")
             else:
-                # Call the function to update the db with the new dtc       
+                # Call the function to update the db with the new dtc
                 insert_dtc(automaker, table_name, code.strip().upper(), desc.strip())
                 st.success(f"{code.upper()} added to {table_name} sucessfully!")
         except Exception as e:

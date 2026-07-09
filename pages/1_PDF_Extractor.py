@@ -101,7 +101,7 @@ if "make_name" in st.session_state:
         "\n".join(f"{d['code']} {d['description']}" for d in orig)
         if isinstance(orig, list)
         else (orig or "no dtcs"))
-    
+
     fs1_dtc_lines = (
         "\n".join(f"{d['code']} {d['description']}" for d in fs1)
         if isinstance(fs1, list)
@@ -110,9 +110,8 @@ if "make_name" in st.session_state:
     # Checkbox to flag when the data extracted was incorrect
     st.checkbox("Original DTCs incorrectly extracted", key="orig_wrong")
     st.markdown("**Original DTCs**")
-    st.code(orig_dtc_lines, language=None) # Display original dtcs and descriptions in a box
+    st.code(orig_dtc_lines, language=None)  # Display original dtcs and descriptions in a box
 
     st.checkbox("FS1 DTCs incorrectly extracted", key="fs1_wrong")
     st.markdown("**FS1 DTCs**")
-    st.code(fs1_dtc_lines, language=None) # Display fs1 dtcs and descriptions in a box
-    
+    st.code(fs1_dtc_lines, language=None)  # Display fs1 dtcs and descriptions in a box

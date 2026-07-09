@@ -33,4 +33,3 @@ if st.button("Search", type="primary"):
                 st.code(f"{r['code']} {r['description']}", language=None)
                 # Display the table name (s) the dtc comes from
                 st.caption(f"Found in: {', '.join(r['tables'])}")
-                
