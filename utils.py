@@ -44,6 +44,7 @@ automaker_db_tables_names_dict = {
     "volkswagen_dtcs": "Volkswagen"
 }
 
+
 def db_connection():
 
     """
@@ -63,6 +64,7 @@ def db_connection():
     )
 
 def extract_from_pdf(url):
+
 
     """
     Downloads a PDF from the given URL, applies OCR on pages 1 and 2,
@@ -96,7 +98,10 @@ def extract_from_pdf(url):
     # Convert from PIL.Image object to text/string
     ocr_text_page1 = pytesseract.image_to_string(images_page1[0])
     # Seach for the automake name in the page 1
-    automake_match = re.search(r'VIN For Vehicle[^\n]*\n.*?\d{4}(?!-)\s+([A-Za-z]+)', ocr_text_page1, re.DOTALL | re.IGNORECASE)
+    automake_match = re.search(
+        r'VIN For Vehicle[^\n]*\n.*?\d{4}(?!-)\s+([A-Za-z]+)',
+        ocr_text_page1, re.DOTALL | re.IGNORECASE
+    )
     # Condition to confirm the automaker name was captured
     make_name = (
         automake_match.group(1).strip()
@@ -113,17 +118,24 @@ def extract_from_pdf(url):
     for dpi in [600, 200, 100]:
         # Return to the beginning of the page
         pdf_bytes.seek(0)
-        images_page1 = convert_from_bytes(pdf_bytes.read(), first_page=1, last_page=1, dpi=dpi)    
+        images_page1 = convert_from_bytes(pdf_bytes.read(), first_page=1, last_page=1, dpi=dpi)
         ocr_text_page1 = pytesseract.image_to_string(images_page1[0])
 
         # re.search: search for the pattern in the text
-        orig_dtc_field_raw_string = re.search(r'Error codes with the ORIGINAL MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)', ocr_text_page1, re.DOTALL)
-        # group(1): returns the 2nd part of the string, 
+        orig_dtc_field_raw_string = re.search(
+            r'Error codes with the ORIGINAL MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)',
+            ocr_text_page1, re.DOTALL
+        )
+        # group(1): returns the 2nd part of the string,
         # which is end of the string and remove the spaces
-        orig_dtc_field_string = orig_dtc_field_raw_string.group(1).strip() if orig_dtc_field_raw_string else "no data extracted"
+        orig_dtc_field_string = (
+            orig_dtc_field_raw_string.group(1).strip() 
+            if orig_dtc_field_raw_string else "no data extracted"
+        )
 
         if "Steps taken to diagnose" not in orig_dtc_field_string:
-            break       # When valid content was captured
+            # When valid content was captured
+            break
 
     # re.findall(): return a list with all DTCs found inside the string
     orig_dtcs_match = re.findall(r'[PCBU][0-9A-F]{4}', orig_dtc_field_string, re.IGNORECASE)
@@ -131,7 +143,7 @@ def extract_from_pdf(url):
     orig_dtcs = orig_dtcs_match if orig_dtcs_match else orig_dtc_field_string
 
     # Page 2
-    # Scalability performance O(1), meaning iterate over the dpi list once (1) until valid content is captured 
+    # Scalability performance O(1), meaning iterate over the dpi list once (1) until valid content is captured
     for dpi in [600, 200, 100]:
         pdf_bytes.seek(0)
         images_page2 = convert_from_bytes(pdf_bytes.read(), first_page=2, last_page=2, dpi=dpi)
@@ -148,7 +160,10 @@ def extract_from_pdf(url):
         # (?=\n\n|\Z): (?=) checks what comes next without consuming it, \n\n two blank lines,
         # | or, \Z end of string
         # (?=\n\n|Z): stops capturing text when tow lines are found or at the end of string \Z
-        fs1_dtc_field_raw_string = re.search(r'Error codes with.*?MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)', ocr_text_page2, re.DOTALL)
+        fs1_dtc_field_raw_string = re.search(
+            r'Error codes with.*?MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)',
+            ocr_text_page2, re.DOTALL
+        )
         fs1_dtc_field_string = (
             fs1_dtc_field_raw_string.group(1).strip()
             if fs1_dtc_field_raw_string else "no data extracted"
@@ -167,6 +182,7 @@ def extract_from_pdf(url):
         fs1_dtcs = fs1_dtc_field_string
 
     return make_name, orig_dtcs, fs1_dtcs
+
 
 def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
 
@@ -188,7 +204,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     # Return the literal string directly when dtc_list is not a list
     if isinstance(dtc_list, str):
         return dtc_list
-    
+
     # Reset the table name to avoid this variable
     # inherit the description from the last automaker table name
     automaker_table = None
@@ -247,7 +263,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
             db_result = cur.fetchone()
             if db_result:
                 description = db_result[0]
-        
+
         # NOT FOUND MESSAGE if not found in any table
         if not description:
             description = "DTC NOT IN THE DATABASE"
@@ -261,6 +277,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
 
     # Return a list with dtc descriptions
     return dtc_descriptions_list
+
 
 def insert_dtc(automaker, table_name, code, description):
 
@@ -297,6 +314,7 @@ def insert_dtc(automaker, table_name, code, description):
     conn.close()
     return True
 
+
 def extract_dtcs_from_file(pdf_file):
 
     """
@@ -314,6 +332,7 @@ def extract_dtcs_from_file(pdf_file):
         for code, description in matches:
             dtcs.append({"code": code.upper(), "description": description.strip()})
     return dtcs
+
 
 def dtc_exists(table, code):
 
@@ -336,6 +355,7 @@ def dtc_exists(table, code):
     conn.close()
     # Return False when the code does not exist
     return result is not None
+
 
 def query_dtc_by_code(code):
 
@@ -376,6 +396,7 @@ def query_dtc_by_code(code):
     # Return a list of dicts, each with code, description and tables list
     return list(grouped.values())
 
+
 def delete_dtc(table_name, dtc):
 
     """
@@ -405,6 +426,7 @@ def delete_dtc(table_name, dtc):
     cur.close()
     conn.close()
     return True
+
 
 def log_extraction(pdf_url: str, status: str, orig_wrong_data: str = None, fs1_wrong_data: str = None):
 
@@ -437,6 +459,7 @@ def log_extraction(pdf_url: str, status: str, orig_wrong_data: str = None, fs1_w
     cur.close()
     conn.close()
 
+
 def get_extraction_stats_by_date(date) -> dict:
 
     """
@@ -468,5 +491,5 @@ def get_extraction_stats_by_date(date) -> dict:
     # Loop to iterate over fetched rows
     for status, count in rows:
         if status in stats:
-            stats[status] = count # Count each status and append to the dict
+            stats[status] = count  # Count each status and append to the dict
     # Return the stats dic
