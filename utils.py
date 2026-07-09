@@ -45,6 +45,7 @@ automaker_db_tables_names_dict = {
 }
 
 def db_connection():
+
     """
     Creates and returns a PostgreSQL database connection using credentials from environment variables.
 
@@ -62,13 +63,14 @@ def db_connection():
     )
 
 def extract_from_pdf(url):
+
     """
     Downloads a PDF from the given URL, applies OCR on pages 1 and 2,
     and extract the automaker name and DTC codes from RMA from fields.
 
     Args: url (str): Public URL the RMA PDF form.
 
-    Returns: 
+    Returns:
         tuple: (make_name, orig_dtcs, fs1_dtcs)
             - make_name (str): Automaker name extracted from page 1.
             - orig_dtcs (list | str): List of DTC codes from the original module, or "no dtcs".
@@ -90,14 +92,14 @@ def extract_from_pdf(url):
     # Convert from BytesIO object to PIL.Image of page 1
     # dpi (Dots Per Inch): pixels density per inch when converting from image to PDF.
     # As higher as dpi is, better is the image quality
-    images_page1 = convert_from_bytes(pdf_bytes.read(), first_page=1, last_page=1, dpi=600)    
+    images_page1 = convert_from_bytes(pdf_bytes.read(), first_page=1, last_page=1, dpi=600)
     # Convert from PIL.Image object to text/string
     ocr_text_page1 = pytesseract.image_to_string(images_page1[0])
     # Seach for the automake name in the page 1
     automake_match = re.search(r'VIN For Vehicle[^\n]*\n.*?\d{4}(?!-)\s+([A-Za-z]+)', ocr_text_page1, re.DOTALL | re.IGNORECASE)
     # Condition to confirm the automaker name was captured
     make_name = (
-        automake_match.group(1).strip() 
+        automake_match.group(1).strip()
         if automake_match else "Not Automaker"
         )
 
@@ -116,8 +118,8 @@ def extract_from_pdf(url):
 
         # re.search: search for the pattern in the text
         orig_dtc_field_raw_string = re.search(r'Error codes with the ORIGINAL MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)', ocr_text_page1, re.DOTALL)
-        # group(1): returns the 2nd part of the string, which is end of the string
-        # and remove the spaces
+        # group(1): returns the 2nd part of the string, 
+        # which is end of the string and remove the spaces
         orig_dtc_field_string = orig_dtc_field_raw_string.group(1).strip() if orig_dtc_field_raw_string else "no data extracted"
 
         if "Steps taken to diagnose" not in orig_dtc_field_string:
@@ -127,7 +129,7 @@ def extract_from_pdf(url):
     orig_dtcs_match = re.findall(r'[PCBU][0-9A-F]{4}', orig_dtc_field_string, re.IGNORECASE)
     # Condition to get the 2nd part of the string if text was captured
     orig_dtcs = orig_dtcs_match if orig_dtcs_match else orig_dtc_field_string
-     
+
     # Page 2
     # Scalability performance O(1), meaning iterate over the dpi list once (1) until valid content is captured 
     for dpi in [600, 200, 100]:
@@ -136,24 +138,24 @@ def extract_from_pdf(url):
         ocr_text_page2 = pytesseract.image_to_string(images_page2[0])
         # regex pattern:
         # "Error codes with": literal text, matching exactly those characters
-        # . matches any character except newline, * zero or more times, 
+        # . matches any character except newline, * zero or more times,
         # ? matches a few characters as possible
         # .*?: matches anything between the strings "Error codes with" and "MODULE" minimally
         # [^\n]: macthes the rest of the lines after "MODULE", without crossing to the next line
         # : literal colon
         # \n\n: two new line characters between the field name and the content
         # (.*?): capture any character in the group ()
-        # (?=\n\n|\Z): (?=) checks what comes next without consuming it, \n\n two blank lines, 
+        # (?=\n\n|\Z): (?=) checks what comes next without consuming it, \n\n two blank lines,
         # | or, \Z end of string
         # (?=\n\n|Z): stops capturing text when tow lines are found or at the end of string \Z
         fs1_dtc_field_raw_string = re.search(r'Error codes with.*?MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)', ocr_text_page2, re.DOTALL)
         fs1_dtc_field_string = (
-            fs1_dtc_field_raw_string.group(1).strip() 
+            fs1_dtc_field_raw_string.group(1).strip()
             if fs1_dtc_field_raw_string else "no data extracted"
         )
         if "Any Key Instructions" not in fs1_dtc_field_string:
             # Valid content found - stop iterate on the dpi list
-            break 
+            break
 
     fs1_dtcs_match = re.findall(r'[PCBU][0-9A-F]{4}', fs1_dtc_field_string, re.IGNORECASE)
 
@@ -167,6 +169,7 @@ def extract_from_pdf(url):
     return make_name, orig_dtcs, fs1_dtcs
 
 def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
+
     """
     Queries the PostgreSQL database for descriptions of the give DTC codes.
     When dtc_list is a string (literal text from the form field, not a valif DTC list),
@@ -190,12 +193,12 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     # inherit the description from the last automaker table name
     automaker_table = None
 
-    # O(1) scalability performance, where iteration over the dict with name_table: 
+    # O(1) scalability performance, where iteration over the dict with name_table:
     # make_name is done only once (1),
     # going straight to the value that matches the make_name selected.
-    # Opposite method than iterate over the dict even after finding the value O(n)  
+    # Opposite method than iterate over the dict even after finding the value O(n)
     reverse_dict = {
-        v.lower(): k for k, v in automaker_db_tables_names_dict.items() 
+        v.lower(): k for k, v in automaker_db_tables_names_dict.items()
         if make_name.lower() == v.lower()
     }
 
@@ -231,7 +234,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
             db_result = cur.fetchone()
             # Condition to confirm if the dtc description was fetched
             if db_result:
-                # Assign the description value (first column of the returned row, which is tuple) 
+                # Assign the description value (first column of the returned row, which is tuple)
                 # to the variable
                 description = db_result[0]
 
@@ -260,6 +263,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     return dtc_descriptions_list
 
 def insert_dtc(automaker, table_name, code, description):
+
     """
     Inserts a new DTC code and description into the specified table.
     Skips insertion if the code already exists in the table.
@@ -272,7 +276,7 @@ def insert_dtc(automaker, table_name, code, description):
     Returns:
         bool: True if inserted, False if code already exists.
     """
-    
+
     # Check if the DTC already exists before inserting
     if dtc_exists(table_name, code):
         return False
@@ -287,13 +291,14 @@ def insert_dtc(automaker, table_name, code, description):
     )
     # Commit the query
     conn.commit()
-    
+
     # Close the db connection
     cur.close()
     conn.close()
     return True
 
 def extract_dtcs_from_file(pdf_file):
+
     """
     Extracts DTC codes and descriptions from an uploaded PDF file via OCR.
     Expects each line in format: CODE Description (e.g. P0100 Mass Air Flow Sensor)
@@ -311,6 +316,7 @@ def extract_dtcs_from_file(pdf_file):
     return dtcs
 
 def dtc_exists(table, code):
+
     """
     Checks if a DTC code already exists in the specified table.
 
@@ -332,6 +338,7 @@ def dtc_exists(table, code):
     return result is not None
 
 def query_dtc_by_code(code):
+
     """
     Searches all automaker tables for a given DTC code.
     Groups results by unique descriptions, listing which tables share each description.
@@ -352,7 +359,7 @@ def query_dtc_by_code(code):
             (code,)
         )
         # Retrieves the first row return by the query
-        row = cur.fetchone() 
+        row = cur.fetchone()
         # If row is not None, assign the description (index 1) to desc.
         if row:
             desc = row[1]
@@ -370,6 +377,7 @@ def query_dtc_by_code(code):
     return list(grouped.values())
 
 def delete_dtc(table_name, dtc):
+
     """
     Deletes a DTC code from the specified table.
 
@@ -382,7 +390,7 @@ def delete_dtc(table_name, dtc):
     # and return False when does not exist
     if not dtc_exists(table_name, dtc):
         return False
-    
+
     # Create an object connection
     conn = db_connection()
     # psycopg object responsible for executing the query
@@ -399,6 +407,7 @@ def delete_dtc(table_name, dtc):
     return True
 
 def log_extraction(pdf_url: str, status: str, orig_wrong_data: str = None, fs1_wrong_data: str = None):
+
     """
     Save one row per PDF processed into the extraction_log table.
 
@@ -429,6 +438,7 @@ def log_extraction(pdf_url: str, status: str, orig_wrong_data: str = None, fs1_w
     conn.close()
 
 def get_extraction_stats_by_date(date) -> dict:
+
     """
     Return correct and incorrect extraction counts for a given date.
 
@@ -442,7 +452,8 @@ def get_extraction_stats_by_date(date) -> dict:
     """
     conn = db_connection()
     cur = conn.cursor()
-    cur.execute(        # SQL command to count the status column
+    # SQL command to count the status column
+    cur.execute(
         """
         SELECT status, COUNT(*) FROM extraction_log
         WHERE extracted_at = %s
@@ -450,13 +461,12 @@ def get_extraction_stats_by_date(date) -> dict:
         """,
         (date,)
     )
-    rows = cur.fetchall()       # Fetch the data extracted
+    rows = cur.fetchall()  # Fetch the data extracted
     cur.close()
     conn.close()
-    stats = {"correct": 0, "incorrect": 0}      # Dictionary to append the status results
+    stats = {"correct": 0, "incorrect": 0}  # Dictionary to append the status results
     # Loop to iterate over fetched rows
     for status, count in rows:
         if status in stats:
-            stats[status] = count       # Count each status and append to the dict
-    # Return the stats dict
-    return stats
+            stats[status] = count # Count each status and append to the dict
+    # Return the stats dic
