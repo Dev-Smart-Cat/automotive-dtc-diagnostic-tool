@@ -65,7 +65,6 @@ def db_connection():
 
 def extract_from_pdf(url):
 
-
     """
     Downloads a PDF from the given URL, applies OCR on pages 1 and 2,
     and extract the automaker name and DTC codes from RMA from fields.
@@ -129,7 +128,7 @@ def extract_from_pdf(url):
         # group(1): returns the 2nd part of the string,
         # which is end of the string and remove the spaces
         orig_dtc_field_string = (
-            orig_dtc_field_raw_string.group(1).strip() 
+            orig_dtc_field_raw_string.group(1).strip()
             if orig_dtc_field_raw_string else "no data extracted"
         )
 
