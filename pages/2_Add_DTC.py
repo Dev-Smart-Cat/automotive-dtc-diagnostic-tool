@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env", override=True)       # Load the .env from the project root
 
-#---------------------------Add a single DTC----------------------------#
 st.title("Add DTC")
 
 # Build table options from the existing dict + generic
@@ -37,7 +36,6 @@ if st.button("Add DTC", type="primary"):            # Button to update the db
         except Exception as e:
             st.error(f"Error inserting DTC: {e}")
 
-#---------------------------DTCs Extraction from PDF file----------------------------#
 st.divider()
 st.subheader("Bulk Import from PDF")
 
@@ -78,7 +76,6 @@ if "bulk_dtcs" in st.session_state:
         except Exception as e:
             st.error(f"Error: {e}")
 
-#---------------------------Delete DTC----------------------------#
 st.divider()
 
 st.subheader("Delete DTC")
@@ -87,9 +84,10 @@ st.subheader("Delete DTC")
 if "delete_automaker" not in st.session_state:
     st.session_state["delete_automaker"] = automaker[0]
 
-
-delete_automaker = st.selectbox("Automaker", automakers, key="delete_automaker")            # Display the automaker name, which point to the table name
-delete_code = st.text_input("DTC to delete", placeholder="e.g. U0100", key="delete_code")   # Text input for the dtc number
+# Display the automaker name, which point to the table name
+delete_automaker = st.selectbox("Automaker", automakers, key="delete_automaker")
+# Text input for the dtc number
+delete_code = st.text_input("DTC to delete", placeholder="e.g. U0100", key="delete_code")
 
 # Button to execute the query deletion
 if st.button("Delete DTC", type="primary"):
