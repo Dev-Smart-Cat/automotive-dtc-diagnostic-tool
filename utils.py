@@ -65,6 +65,7 @@ def db_connection():
 
 def extract_from_pdf(url):
 
+
     """
     Downloads a PDF from the given URL, applies OCR on pages 1 and 2,
     and extract the automaker name and DTC codes from RMA from fields.
@@ -127,7 +128,10 @@ def extract_from_pdf(url):
         )
         # group(1): returns the 2nd part of the string,
         # which is end of the string and remove the spaces
-        orig_dtc_field_string = orig_dtc_field_raw_string.group(1).strip() if orig_dtc_field_raw_string else "no data extracted"
+        orig_dtc_field_string = (
+            orig_dtc_field_raw_string.group(1).strip() 
+            if orig_dtc_field_raw_string else "no data extracted"
+        )
 
         if "Steps taken to diagnose" not in orig_dtc_field_string:
             # When valid content was captured
@@ -139,7 +143,7 @@ def extract_from_pdf(url):
     orig_dtcs = orig_dtcs_match if orig_dtcs_match else orig_dtc_field_string
 
     # Page 2
-    # Scalability performance O(1), meaning iterate over the dpi list once (1) until valid content is captured 
+    # Scalability performance O(1), meaning iterate over the dpi list once (1) until valid content is captured
     for dpi in [600, 200, 100]:
         pdf_bytes.seek(0)
         images_page2 = convert_from_bytes(pdf_bytes.read(), first_page=2, last_page=2, dpi=dpi)
@@ -156,7 +160,10 @@ def extract_from_pdf(url):
         # (?=\n\n|\Z): (?=) checks what comes next without consuming it, \n\n two blank lines,
         # | or, \Z end of string
         # (?=\n\n|Z): stops capturing text when tow lines are found or at the end of string \Z
-        fs1_dtc_field_raw_string = re.search(r'Error codes with.*?MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)', ocr_text_page2, re.DOTALL)
+        fs1_dtc_field_raw_string = re.search(
+            r'Error codes with.*?MODULE[^\n]*:\n\n(.*?)(?=\n\n|\Z)',
+            ocr_text_page2, re.DOTALL
+        )
         fs1_dtc_field_string = (
             fs1_dtc_field_raw_string.group(1).strip()
             if fs1_dtc_field_raw_string else "no data extracted"
@@ -197,7 +204,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     # Return the literal string directly when dtc_list is not a list
     if isinstance(dtc_list, str):
         return dtc_list
-    
+
     # Reset the table name to avoid this variable
     # inherit the description from the last automaker table name
     automaker_table = None
@@ -256,7 +263,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
             db_result = cur.fetchone()
             if db_result:
                 description = db_result[0]
-        
+
         # NOT FOUND MESSAGE if not found in any table
         if not description:
             description = "DTC NOT IN THE DATABASE"
