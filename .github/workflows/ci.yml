@@ -55,3 +55,8 @@ jobs:
             # --exclude=.git: skip the git internals folder
             - name: Lint with flake8
               run: flake8 . --max-line-length=120 --exclude=.git
+
+            # Step 6: Test the functions from utils.py by calling small and verify
+            # if the output is what is expected
+            - name: Run pytests
+              run: pytest test_utils.py -v
