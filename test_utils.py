@@ -1,5 +1,6 @@
 from utils import automaker_db_tables_names_dict, query_descriptions
 
+
 # Test 1: dictionary structure
 def test_automaker_dict_is_not_empty():
     # The dictionary must have automakers in it,
