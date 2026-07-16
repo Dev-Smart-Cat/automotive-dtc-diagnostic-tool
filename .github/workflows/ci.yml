@@ -17,8 +17,14 @@ jobs:
         
         runs-on: ubuntu-latest  # The OS the VM GitHub creates
 
-        steps:
+        # MATRIX
+        # Run the entine job once per Python version
+        # GitHub creates 3 VMs, one per Python version
+        strategy:
+          matrix:
+            python-version: ["3.10", "3.11", "3.12"]
 
+        steps:
             # Step 1: download the code onto the VM
             # Without this part, the VM has no idea my code exists
             - name: Checkout repository
@@ -29,7 +35,7 @@ jobs:
             - name: Set up Python
               uses: actions/setup-python@v5
               with:
-                python-version: "3.11"
+                python-version: ${{ matrix.python-version }} # uses the matrix variable
                 cache: "pip"           # Caches downloaded packages
 
             # Step 3: Install project's dependencies
