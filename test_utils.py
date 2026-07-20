@@ -1,4 +1,6 @@
-from utils import automaker_db_tables_names_dict, query_descriptions
+import os
+import pytest
+from utils import automaker_db_tables_names_dict, query_descriptions, db_connection
 
 
 # Test 1: dictionary structure
@@ -27,3 +29,15 @@ def test_query_description_returns_string_when_input_is_string():
     # of the form is not a dtc and a literal string returns
     result = query_descriptions("Ford", "no dtcs", automaker_db_tables_names_dict)
     assert result == "no dtcs"
+
+
+# Test 5: database connection
+def test_db_connection():
+    # Skip the DB credentials when not available
+    # This happens on forks or local runs without a .env file
+    if not os.getenv("HOST_NAME"):
+        pytest.skip("No DB credentials available - skipping DB test")
+    
+    conn = db_connection()      # Attempt open a Postgres connection
+    assert conn is not None     # asserting object exists
+    conn.close()                # Close the connection after testing
