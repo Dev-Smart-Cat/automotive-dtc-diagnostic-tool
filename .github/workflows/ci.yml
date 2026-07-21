@@ -30,7 +30,7 @@ jobs:
             image: postgres:16                      # official PotsgreSQL Docker image from Docker Hub
             env:  
               POSTGRES_USER: postgres                  
-              POSTGRES_PASSWORD: shakey_10
+              POSTGRES_PASSWORD: shakey-10
               POSTGRES_DB: prescreen_diag_data_api
             ports:
               - 5432:5432
