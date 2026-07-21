@@ -37,7 +37,7 @@ def test_db_connection():
     # This happens on forks or local runs without a .env file
     if not os.getenv("HOST_NAME"):
         pytest.skip("No DB credentials available - skipping DB test")
-    
+
     conn = db_connection()      # Attempt open a Postgres connection
     assert conn is not None     # asserting object exists
     conn.close()                # Close the connection after testing
