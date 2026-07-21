@@ -34,17 +34,17 @@ jobs:
               POSTGRES_DB: prescreen_diag_data_api
             ports:
               - 5432:5432
+              # health check: CI waits until PostreSQL is ready before running steps
+              # without this, pytest could run before the DB finishes starting up
+              # command to run to check health
+              # time between running the check
+              # maximum time to allow one check to run
             options: >-
-              --health-cmd pg_isready
+              --health-cmd pg_isready    
               --health-interval 10s
               --health-timeout 5s
               --health-retries 5
-              # health check: CI waits until PostreSQL is ready before running steps
-              # without this, pytest could run before the DB finishes starting up
-              # 1. command to run to check health
-              # 2. time between running the check
-              # 3. maximum time to allow one check to run
-              
+          
         steps:
             # Step 1: download the code onto the VM
             # Without this part, the VM has no idea my code exists
