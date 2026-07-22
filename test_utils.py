@@ -50,11 +50,11 @@ def test_db_connection():
 def test_table():
     # Create an object connection and excecute object
     conn = pg.connect(
-        host=os.getenv("HOST_NAME"),
-        port=os.getenv("PORT_NUMBER"),
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("USER_NAME"),
-        password=os.getenv("PASSWORD")
+        HOST_NAME=os.getenv("HOST_NAME"),
+        PORT_NUMBER=os.getenv("PORT_NUMBER"),
+        DB_NAME=os.getenv("DB_NAME"),
+        USER_NAME=os.getenv("USER_NAME"),
+        PASSWORD=os.getenv("PASSWORD")
     )
     cur = conn.cursor()
 
