@@ -1,6 +1,5 @@
 import os
 import pytest
-import psycopg2 as pg
 from utils import automaker_db_tables_names_dict, query_descriptions, db_connection, dtc_exists, insert_dtc
 
 
@@ -49,13 +48,7 @@ def test_db_connection():
 @pytest.fixture
 def test_table():
     # Create an object connection and excecute object
-    conn = pg.connect(
-        HOST_NAME=os.getenv("HOST_NAME"),
-        PORT_NUMBER=os.getenv("PORT_NUMBER"),
-        DB_NAME=os.getenv("DB_NAME"),
-        USER_NAME=os.getenv("USER_NAME"),
-        PASSWORD=os.getenv("PASSWORD")
-    )
+    conn = db_connection()
     cur = conn.cursor()
 
     # Create a temporary table representing the automaker_dtc table
@@ -66,8 +59,9 @@ def test_table():
                 description TEXT
         )
     """)
-
     conn.commit()       # Commit the query to create the table
+
+    yield "test_dtcs"
 
     cur.execute("DROP TABLE IF EXISTS test_dtcs")
     conn.commit()       # Commit drop table command
