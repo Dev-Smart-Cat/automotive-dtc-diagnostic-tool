@@ -1,6 +1,5 @@
 import os
 import pytest
-import psycopg2 as pg
 from utils import automaker_db_tables_names_dict, query_descriptions, db_connection, dtc_exists, insert_dtc
 
 
@@ -48,7 +47,7 @@ def test_db_connection():
 # the table is dropped after the test, keeping the DB cleaned.
 @pytest.fixture
 def test_table():
-    # Create an object connection and excecute object  
+    # Create an object connection and excecute object
     conn = db_connection()
     cur = conn.cursor()
 
@@ -80,8 +79,8 @@ def test_insert_and_exists(test_table):
     assert inserted is True      # must return true when insertion succeeds
 
     # Confirm the inserted DTC now exists in the table
-    dtc_exists = dtc_exists(test_table, "P0301")
-    assert dtc_exists is True    # must return true if the DTC is found
+    exists = dtc_exists(test_table, "P0301")
+    assert exists is True    # must return true if the DTC is found
 
 
 # Test 7: inserting the same DTC twice must be blocked
