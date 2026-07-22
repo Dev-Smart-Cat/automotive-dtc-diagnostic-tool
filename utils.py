@@ -229,7 +229,7 @@ def query_descriptions(make_name, dtc_list, automaker_db_tables_names_dict):
     # List to append the dtcs got from the db
     dtc_descriptions_list = []
 
-    # Iterate over the dtcs extracted from the PDF form to fetch their descriptions
+    # Iterate over the dtcs extracted from the PDF form to fetch their dtc
     for dtc_code in dtc_list:
 
         # Reset the description variable to avoid this variable
@@ -294,7 +294,8 @@ def insert_dtc(automaker, table_name, code, description):
         bool: True if inserted, False if code already exists.
     """
 
-    # Check if the DTC already exists before inserting
+    # Check if the DTC already exists before inserting.
+    # If the DTC exists and the DTC is not inserted return False indicating the DTC was not inserted
     if dtc_exists(table_name, code):
         return False
     # Create a object connection

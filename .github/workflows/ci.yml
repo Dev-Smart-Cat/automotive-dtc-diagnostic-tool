@@ -29,9 +29,9 @@ jobs:
           postgres:
             image: postgres:16                      # official PotsgreSQL Docker image from Docker Hub
             env:  
-              POSTGRES_USER: postgres                  
-              POSTGRES_PASSWORD: shakey-10
-              POSTGRES_DB: prescreen_diag_data_api
+              POSTGRES_USER: ${{ secrets.USER_NAME }}                  
+              POSTGRES_PASSWORD: ${{ secrets.PASSWORD }}
+              POSTGRES_DB: ${{ secrets.DB_NAME }}
             ports:
               - 5432:5432
               # health check: CI waits until PostreSQL is ready before running steps
