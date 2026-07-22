@@ -1,5 +1,6 @@
 import os
 import pytest
+import psycopg2 as pg
 from utils import automaker_db_tables_names_dict, query_descriptions, db_connection, dtc_exists, insert_dtc
 
 
@@ -48,7 +49,13 @@ def test_db_connection():
 @pytest.fixture
 def test_table():
     # Create an object connection and excecute object
-    conn = db_connection()
+    conn = pg.connect(
+        host=os.getenv("HOST_NAME"),
+        port=os.getenv("PORT_NUMBER"),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("USER_NAME"),
+        password=os.getenv("PASSWORD")
+    )
     cur = conn.cursor()
 
     # Create a temporary table representing the automaker_dtc table
