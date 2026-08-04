@@ -57,7 +57,7 @@ def db_connection():
     # Return a object connection with the database from the env vars
     return pg.connect(
         host=os.getenv("HOST_NAME"),
-        port=os.getenv("PORT_NUMBER"),
+        port=int(os.getenv("PORT_NUMBER", 5432)),
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("USER_NAME"),
         password=os.getenv("PASSWORD")

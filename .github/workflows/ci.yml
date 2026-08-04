@@ -87,3 +87,9 @@ jobs:
             # if the output is what is expected
             - name: Run pytests
               run: pytest test_utils.py -v
+              env:
+                HOST_NAME: "127.0.0.1"
+                PORT_NAME: 5432
+                DB_NAME: ${{ secrets.DB_NAME }}
+                USER_NAME: ${{ secrets.USER_NAME }}
+                PASSWORD: ${{ secrets.PASSWORD }}
