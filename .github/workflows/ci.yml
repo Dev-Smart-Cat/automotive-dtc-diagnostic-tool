@@ -91,7 +91,7 @@ jobs:
                 # Forces TCP/IP connection instead of Unix socket
                 # - required on Linux to reach the PostgreSQL container via port mapping
                 HOST_NAME: "127.0.0.1" 
-                PORT_NAME: 5432
+                PORT_NUMBER: 5432
                 DB_NAME: ${{ secrets.DB_NAME }}
                 USER_NAME: ${{ secrets.USER_NAME }}
                 PASSWORD: ${{ secrets.PASSWORD }}
@@ -101,21 +101,23 @@ jobs:
         runs-on: ubuntu-latest
 
         steps: 
-          - name: Checkout repository       # check the repository on actions
-            uses: actions/checkout@v4
+            - name: Checkout repository       # check the repository on actions
+              uses: actions/checkout@v4
 
-          - name: Set up Python
-            uses: actions/setup-python@v5   # install Python on GitHub VM
-            with:
-              python-version: "3.11"
-              cache: "pip"
+            - name: Set up Python
+              uses: actions/setup-python@v5   # install Python on GitHub VM
+              with:
+                  python-version: "3.11"
+                  cache: "pip"
 
-          - name: Install dependencies      # Install the dependencies
-            run: pip install -r requirements.txt
+            - name: Install dependencies      # Install the dependencies
+              run: pip install -r requirements.txt
 
-          # Scan all packages in requirements.txt against the CVE database
-          # --desc: shows vulnerability description in the output
-          # If any vulnerability is found, this step fails and CI goes red
-          - name: Scan dependencies for vulnerabilities
-            run: pip-audit - requirements.txt --desc
+            # Scan all packages in requirements.txt against the CVE database
+            # --desc: shows vulnerability description in the output
+            # If any vulnerability is found, this step fails and CI goes red
+            - name: Scan dependencies for vulnerabilities
+              run: pip-audit -r requirements.txt --desc
+
+      
       
