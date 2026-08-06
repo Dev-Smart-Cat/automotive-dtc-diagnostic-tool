@@ -22,9 +22,9 @@ jobs:
         # GitHub creates 3 VMs, one per Python version
         strategy:
           matrix:
-            python-version: ["3.10", "3.11", "3.12", "3.14"]
+            python-version: ["3.11", "3.12", "3.13"]
 
-        # SEERVICDE CONTAINERS
+        # SERVICE CONTAINERS
         services:
           postgres:
             image: postgres:16                      # official PotsgreSQL Docker image from Docker Hub
