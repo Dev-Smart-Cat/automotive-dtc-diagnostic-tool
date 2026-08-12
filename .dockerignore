@@ -1,0 +1,13 @@
+.venv
+.env
+*.pyc
+notebooks/
+video/
+.git
+.pytest_cache
+.gitignore
+LICENSE
+README.md
+.github
+test_utils.py
+Dockerfile
