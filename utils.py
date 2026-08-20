@@ -2,8 +2,9 @@ import io
 import re
 import os
 import requests
-import psycopg2 as pg
+import psycopg as pg
 import pytesseract
+import traceback
 from pdf2image import convert_from_bytes
 
 
@@ -19,7 +20,6 @@ automaker_db_tables_names_dict = {
     "dodge_dtcs": "Dodge",
     "ford_dtcs": "Ford",
     "generic_dtcs": "Generic",
-    "geo_dtcs": "Geo",
     "gmc_dtcs": "GMC",
     "honda_dtcs": "Honda",
     "hyundai_dtcs": "Hyundai",
@@ -51,17 +51,22 @@ def db_connection():
     Creates and returns a PostgreSQL database connection using credentials from environment variables.
 
     Returns:
-        psycopg2.connection: Active database connection object.
+        conn: Postgres connection object.
     """
+    try:
+        # Return a object connection with the database from the env vars
+        conn =  pg.connect(
+            host=os.getenv("HOST_NAME"),
+            port=int(os.getenv("PORT_NUMBER", 5432)),
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("USER_NAME"),
+            password=os.getenv("PASSWORD")
+        )
+        return conn
+    except Exception:
+        traceback.print_exc()
+        raise
 
-    # Return a object connection with the database from the env vars
-    return pg.connect(
-        host=os.getenv("HOST_NAME"),
-        port=int(os.getenv("PORT_NUMBER", 5432)),
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("USER_NAME"),
-        password=os.getenv("PASSWORD")
-    )
 
 
 def extract_from_pdf(url):
