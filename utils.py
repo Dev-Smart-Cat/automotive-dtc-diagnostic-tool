@@ -68,7 +68,6 @@ def db_connection():
         raise
 
 
-
 def extract_from_pdf(url):
 
     """
