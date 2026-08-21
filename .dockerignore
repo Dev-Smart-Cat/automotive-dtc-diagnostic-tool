@@ -11,3 +11,4 @@ README.md
 .github
 test_utils.py
 Dockerfile
+docker-compose.yml
