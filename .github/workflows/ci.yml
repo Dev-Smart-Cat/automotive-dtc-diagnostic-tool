@@ -119,5 +119,20 @@ jobs:
             - name: Scan dependencies for vulnerabilities
               run: pip-audit -r requirements.txt --desc
 
-      
+    secrets-scan:
+      name: Secret scan
+      runs-on: ubuntu-latest
+
+      steps:
+          - name: Checkout repository   # GitHub VM downloads the source code
+            uses: actions/checkout@v4
+            with: 
+                fetch-depth: 0          # fecth full git history - trufflehog scans all commits
+
+          - name: Scan for secrets with TruffleHog
+            uses: trufflesecurity/trufflehog@main
+            with:
+                extra_args: --only-verified
+
+
       
