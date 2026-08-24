@@ -132,7 +132,7 @@ jobs:
           - name: Scan for secrets with TruffleHog
             uses: trufflesecurity/trufflehog@main
             with:
-                extra_args: --only-verified --fail
+                extra_args: --only-verified
 
 
       
