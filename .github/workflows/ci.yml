@@ -113,6 +113,9 @@ jobs:
             - name: Install dependencies      # Install the dependencies
               run: pip install -r requirements.txt
 
+            - name: Install pip-audit on VM
+              run: pip install pip-audit
+
             # Scan all packages in requirements.txt against the CVE database
             # --desc: shows vulnerability description in the output
             # If any vulnerability is found, this step fails and CI goes red
