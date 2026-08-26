@@ -64,6 +64,9 @@ jobs:
             - name: Install dependencies
               run: pip install -r requirements.txt
 
+            - name: Install framework tests
+              run: pip install -r requirements_dev.txt
+
             # Step 4: Verify all .py files have valid syntax
             # py_compile is built into Python no extra install needed
             - name: Check Python syntax
@@ -112,6 +115,9 @@ jobs:
 
             - name: Install dependencies      # Install the dependencies
               run: pip install -r requirements.txt
+
+            - name: Install pip-audit on VM
+              run: pip install pip-audit
 
             # Scan all packages in requirements.txt against the CVE database
             # --desc: shows vulnerability description in the output
