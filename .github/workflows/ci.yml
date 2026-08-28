@@ -22,9 +22,9 @@ jobs:
         # GitHub creates 3 VMs, one per Python version
         strategy:
           matrix:
-            python-version: ["3.10", "3.11", "3.12", "3.14"]
+            python-version: ["3.11", "3.12", "3.13"]
 
-        # SEERVICDE CONTAINERS
+        # SERVICE CONTAINERS
         services:
           postgres:
             image: postgres:16                      # official PotsgreSQL Docker image from Docker Hub
@@ -64,6 +64,9 @@ jobs:
             - name: Install dependencies
               run: pip install -r requirements.txt
 
+            - name: Install framework tests
+              run: pip install -r requirements_dev.txt
+
             # Step 4: Verify all .py files have valid syntax
             # py_compile is built into Python no extra install needed
             - name: Check Python syntax
@@ -88,8 +91,54 @@ jobs:
             - name: Run pytests
               run: pytest test_utils.py -v
               env:
-                HOST_NAME: "127.0.0.1"
-                PORT_NAME: 5432
+                # Forces TCP/IP connection instead of Unix socket
+                # - required on Linux to reach the PostgreSQL container via port mapping
+                HOST_NAME: "127.0.0.1" 
+                PORT_NUMBER: 5432
                 DB_NAME: ${{ secrets.DB_NAME }}
                 USER_NAME: ${{ secrets.USER_NAME }}
                 PASSWORD: ${{ secrets.PASSWORD }}
+
+    dependency-scan:
+        name: Dependency Vulnerability Scan
+        runs-on: ubuntu-latest
+
+        steps: 
+            - name: Checkout repository       # check the repository on actions
+              uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5   # install Python on GitHub VM
+              with:
+                  python-version: "3.11"
+                  cache: "pip"
+
+            - name: Install dependencies      # Install the dependencies
+              run: pip install -r requirements.txt
+
+            - name: Install pip-audit on VM
+              run: pip install pip-audit
+
+            # Scan all packages in requirements.txt against the CVE database
+            # --desc: shows vulnerability description in the output
+            # If any vulnerability is found, this step fails and CI goes red
+            - name: Scan dependencies for vulnerabilities
+              run: pip-audit -r requirements.txt --desc
+
+    secrets-scan:
+      name: Secret scan
+      runs-on: ubuntu-latest
+
+      steps:
+          - name: Checkout repository   # GitHub VM downloads the source code
+            uses: actions/checkout@v4
+            with: 
+                fetch-depth: 0          # fecth full git history - trufflehog scans all commits
+
+          - name: Scan for secrets with TruffleHog
+            uses: trufflesecurity/trufflehog@main
+            with:
+                extra_args: --only-verified
+
+
+      
