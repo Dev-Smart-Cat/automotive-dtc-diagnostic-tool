@@ -1,0 +1,47 @@
+name: CD Pipeline
+
+on:
+    workflow_run:
+        workflows: [""Build and Push Docker Image""]
+        types:
+          - completed
+        branches:
+          - main
+
+jobs:
+
+  # deploy to staging
+  deploy-staging: 
+    name: Deploy to Staging
+    # this condition is to make sure the docker.yml succeeded, 
+    # does not run if the docker.yml fails
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    # 'environment' is what requires the reviwer gate approval
+    # and do not move to the steps section until manually approved
+    environment: 
+      name: staging
+
+    # command where GitHub VM pulls the latest docker image from docker registry/hub 
+    steps:
+      - name: Pull staging image
+        run: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
+      
+      # command to run the container on GitHub VM on the mentioned port 
+      - name: Run production container
+        run: |
+          docker run -d --name app-production -p 8502:8501 \
+            ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
+      
+      - name: Wait for app to start
+        run: sleep 10
+
+        # curl: tool for endpoint url responses purposes
+        # _stcore/health: streamlit endpoint to test the streamlit web sever, returns ok when web server is not down 
+      - name: Smoke test production
+        run: curl -f http://localhost:8502/_stcore/health
+
+      - name: Stop staging container
+        if: always()
+        run: docker rm -f app-staging || true
