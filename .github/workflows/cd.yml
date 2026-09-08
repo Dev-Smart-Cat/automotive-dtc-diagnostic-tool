@@ -1,0 +1,99 @@
+name: CD Pipeline
+
+on:
+    workflow_run:
+        workflows: ["Build and Push Docker Image"]
+        types:
+          - completed
+        branches:
+          - main
+
+jobs:
+  # deploy to staging
+  deploy-staging: 
+    name: Deploy to Staging
+    # this condition is to make sure the docker.yml succeeded, 
+    # does not run if the docker.yml fails
+    # workflow_run: listen from another workflow conclusion
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    # 'environment' is what requires the reviewer gate approval
+    # and do not move to the steps section until manually approved
+    environment: 
+      name: staging
+
+    # command where GitHub VM pulls the latest docker image from docker registry/hub 
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}  
+
+      - name: Pull staging image
+        run: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
+      
+      # command to run the staging container on GitHub VM on the mentioned port 
+      - name: Run staging container
+        run: |
+          docker run -d --name app-staging -p 8501:8501 \
+            ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
+      
+      - name: Wait for app to start
+        run: sleep 10
+
+        # curl: tool for endpoint url responses testing purposes
+        # _stcore/health: streamlit endpoint to test the streamlit web sever, returns ok when web server is not down 
+      - name: Smoke test production
+        run: curl -f http://localhost:8502/_stcore/health
+
+        # docker rm -f: docker to force removing a container from the GitHub VM,
+        # NOTE: the container name MUST BE the same name as the running command 
+      - name: Stop staging container
+        if: always()
+        # || true: if the docker rm -f ap-staging fails, forces the step to be success
+        run: docker rm -f app-staging || true
+
+# deploy to production
+  deploy-production:
+    name: Deploy to Production
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    # "environments: production" triggers the reviwer gate, similar to pull request
+    environment:
+      name:  production
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets. DOCKER_PASSWORD }}
+
+      - name: Pull production image
+        run: |
+          docker pull ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
+
+      - name: Run production container
+        run: |
+          docker run -d --name app-production -p 8501:8501 \
+            ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
+
+      - name: Wait for app to start
+        run: sleep 10
+      
+      # smoking test with curl tool for endpoint responses
+      # -f: ensure only success responses are processed
+      # /_stcore/health: streamlit endpoint to test its web server 
+      - name: Confirm deployment
+        run: curl -f http://localhost:8502/_stcore/health
+
+      # message to confirm the deployment of the production container 
+      # echo: is a bash command to print messages
+      - name: Confirm deployment
+        run: echo "Deploy ${{ github.event.workflow_run.head_sha }} to production"
+
+      - name: Stop production container
+        if: always()
+        run: docker rm -f app-production || true
