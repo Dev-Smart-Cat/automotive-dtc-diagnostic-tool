@@ -33,3 +33,4 @@ jobs:
             context: .
             push: true
             tags: ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:latest
+                  ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.sha}}
