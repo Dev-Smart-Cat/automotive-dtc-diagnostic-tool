@@ -32,5 +32,6 @@ jobs:
           with:
             context: .
             push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:latest
-                  ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.sha}}
+            tags: | # |: treat the following indented lines as a multi-line string
+              ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:latest
+              ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.sha}}
