@@ -12,9 +12,7 @@ on:
 
 # jobs contains everything that runs.
 jobs:
-
-    build:
-        
+    build:   
         runs-on: ubuntu-latest  # The OS the VM GitHub creates
 
         # MATRIX
