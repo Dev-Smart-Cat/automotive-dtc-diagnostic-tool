@@ -37,7 +37,7 @@ jobs:
       # command to run the staging container on GitHub VM on the mentioned port 
       - name: Run staging container
         run: |
-          docker run -d --name app-staging -p 8501:8501 \
+          docker run -d --name app-staging -p 8502:8502 \
             ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
       
       - name: Wait for app to start
