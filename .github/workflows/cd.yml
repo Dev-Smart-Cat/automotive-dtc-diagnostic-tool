@@ -77,7 +77,7 @@ jobs:
 
       - name: Run production container
         run: |
-          docker run -d --name app-production -p 8501:8501 \
+          docker run -d --name app-production -p 8502:8502 \
             ${{ secrets.DOCKER_USERNAME }}/automotive-diagnostic-tool:${{ github.event.workflow_run.head_sha }}
 
       - name: Wait for app to start
