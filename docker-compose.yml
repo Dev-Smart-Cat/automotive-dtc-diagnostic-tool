@@ -1,0 +1,26 @@
+services:
+
+  db:
+    image:  postgres:17
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${USER_NAME}
+      POSTGRES_PASSWORD: ${PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  app:
+    build: .
+    ports:
+      - "8502:8502"
+    env_file:
+      - .env
+    environment:
+      HOST_NAME: db
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
