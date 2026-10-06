@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 from utils import insert_dtc, automaker_db_tables_names_dict, dtc_exists, delete_dtc
 from pathlib import Path
 from dotenv import load_dotenv
