@@ -320,25 +320,6 @@ def insert_dtc(automaker, table_name, code, description):
     return True
 
 
-def extract_dtcs_from_file(pdf_file):
-
-    """
-    Extracts DTC codes and descriptions from an uploaded PDF file via OCR.
-    Expects each line in format: CODE Description (e.g. P0100 Mass Air Flow Sensor)
-
-    Returns:
-        list[dict]: List of dicts with keys 'code' and 'description'.
-    """
-    images = convert_from_bytes(pdf_file.read(), dpi=300)
-    dtcs = []
-    for image in images:
-        text = pytesseract.image_to_string(image)
-        matches = re.findall(r'([PCBU][0-9A-F]{4})\s+(.+)', text, re.IGNORECASE)
-        for code, description in matches:
-            dtcs.append({"code": code.upper(), "description": description.strip()})
-    return dtcs
-
-
 def dtc_exists(table, code):
 
     """
