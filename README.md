@@ -157,3 +157,105 @@ CREATE TABLE automaker_dtcs (
 ```
 
 Supported automakers: Acura, Audi, BMW, Buick, Cadillac, Chevrolet, Chrysler, Dodge, Ford, Generic, Geo, GMC, Honda, Hyundai, Hummer, Infiniti, Isuzu, Jaguar, Jeep, Kia, Land Rover, Lexus, Mazda, Mercedes-Benz, Mini, Mitsubishi, Nissan, Oldsmobile, Pontiac, Saturn, Subaru, Toyota, Volkswagen.
+
+
+## Create the Container from the Beginner
+
+- Step 1: Create the docker file
+- Create .dockerignore and ignore all files and folders the app does not use to run
+Note: see .dockerignore from this project to see what must be ignored
+
+- Step 2: run 
+```bash
+docker build -t automotive-tool:v1 .
+docker run -p 8502:8502 automotive-tool:v1
+```
+
+- Step 3 Environment variables in containers
+HOST_NAME=host.docker.internal -> points to the credentials to my machine
+```bash
+docker run -p 8502:8502 --env-file .env automotive-tool:v1
+```
+Note: make sure to encode PostgreSQL conn to UTF-8 (conn.set_client_encoding("UTF-8"))
+
+- Step 4: docker-compose: docker-compose allow define and run multiple containers together as one unit.
+The app and its database side by side, in an isolated network, with a single command.
+```bash
+docker-compose up --build -d
+```
+
+- Step 5: add to pg_hba_conf  
+notepad: "C:\Program Files\PostgreSQL\17\data\postgresql.conf"
+#listen_addresses = 'localhost'
+Change it to:
+listen_addresses = '*'
+
+host    all             all             192.168.65.0/24         md5
+host    all             all             172.17.0.0/16           md5
+path: C:\Program Files\PostgreSQL\17\data\pg_hba.conf
+
+Allow port 5432 through Windows Firewall
+Run in PowerShell as Administrator:
+New-NetFirewallRule -DisplayName "PostgreSQL Docker" -Direction Inbound -Protocol TCP -LocalPort 5432 -Action Allow
+
+- Step 6: dump.dump is a snapshot of your entire local database — all tables, all data — packaged into a single file by pg_dump.
+Note: the purpose: your local PostgreSQL has years of DTC data. The new PostgreSQL container starts completely empty. dump.dump is the bridge — you copy that snapshot into the container and restore it, so the container's PostgreSQL ends up with exactly the same data as your local database.
+
+Export local database to a file:
+```bash
+& "C:\Program Files\PostgreSQL\17\bin\pg_dump.exe" -U postgres -d prescreen_diag_data_api -F c -f dump.dump
+```
+
+Copy the dump file into the container:
+```bash
+docker cp dump.dump dtc-form-automation-db-1:/dump.dump
+```
+
+Restore the data inside the container
+```bash
+docker exec dtc-form-automation-db-1 pg_restore -U postgres -d prescreen_diag_data_api -v /dump.dump
+```
+
+### Updating the application
+
+Run the application before the database set up
+```bash
+docker build -t automotive-tool:v1 .
+docker run -p 8502:8502 automotive-tool:v1
+```
+
+- Make the changes on the application and run the following commands:
+Export local database to a file:
+```bash
+& "C:\Program Files\PostgreSQL\17\bin\pg_dump.exe" -U postgres -d prescreen_diag_data_api -F c -f dump.dump
+```
+
+Copy the dump file into the container:
+```bash
+docker cp dump.dump dtc-form-automation-db-1:/dump.dump
+```
+
+Restore the data inside the container:
+```bash
+docker exec dtc-form-automation-db-1 pg_restore -U postgres -d prescreen_diag_data_api -v /dump.dump
+```
+
+```bash
+docker build -t automotive-tool:vNumber .
+```
+
+**HOST_NAME=host.docker.internal**: passing credentials when running the application
+**host.docker.internal** points to the credentials to my machine
+```bash
+docker run -p 8502:8502 --env-file .env automotive-tool:v1
+```
+
+docker-compose: allows defining and run multiple containers together as one unit.
+The app and its database side by side, in an isolated network, with a single command.
+Return HOST_NAME=db
+```bash
+docker-compose up --build
+```
+
+
+

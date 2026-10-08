@@ -2,8 +2,9 @@ import io
 import re
 import os
 import requests
-import psycopg2 as pg
+import psycopg as pg
 import pytesseract
+import traceback
 from pdf2image import convert_from_bytes
 
 
@@ -19,7 +20,6 @@ automaker_db_tables_names_dict = {
     "dodge_dtcs": "Dodge",
     "ford_dtcs": "Ford",
     "generic_dtcs": "Generic",
-    "geo_dtcs": "Geo",
     "gmc_dtcs": "GMC",
     "honda_dtcs": "Honda",
     "hyundai_dtcs": "Hyundai",
@@ -51,17 +51,21 @@ def db_connection():
     Creates and returns a PostgreSQL database connection using credentials from environment variables.
 
     Returns:
-        psycopg2.connection: Active database connection object.
+        conn: Postgres connection object.
     """
-
-    # Return a object connection with the database from the env vars
-    return pg.connect(
-        host=os.getenv("HOST_NAME"),
-        port=int(os.getenv("PORT_NUMBER", 5432)),
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("USER_NAME"),
-        password=os.getenv("PASSWORD")
-    )
+    try:
+        # Return a object connection with the database from the env vars
+        conn = pg.connect(
+            host=os.getenv("HOST_NAME"),
+            port=int(os.getenv("PORT_NUMBER", 5432)),
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("USER_NAME"),
+            password=os.getenv("PASSWORD")
+        )
+        return conn
+    except Exception:
+        traceback.print_exc()
+        raise
 
 
 def extract_from_pdf(url):
@@ -314,25 +318,6 @@ def insert_dtc(automaker, table_name, code, description):
     cur.close()
     conn.close()
     return True
-
-
-def extract_dtcs_from_file(pdf_file):
-
-    """
-    Extracts DTC codes and descriptions from an uploaded PDF file via OCR.
-    Expects each line in format: CODE Description (e.g. P0100 Mass Air Flow Sensor)
-
-    Returns:
-        list[dict]: List of dicts with keys 'code' and 'description'.
-    """
-    images = convert_from_bytes(pdf_file.read(), dpi=300)
-    dtcs = []
-    for image in images:
-        text = pytesseract.image_to_string(image)
-        matches = re.findall(r'([PCBU][0-9A-F]{4})\s+(.+)', text, re.IGNORECASE)
-        for code, description in matches:
-            dtcs.append({"code": code.upper(), "description": description.strip()})
-    return dtcs
 
 
 def dtc_exists(table, code):
