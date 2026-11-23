@@ -1,6 +1,5 @@
 import streamlit as st
-import pandas as pd
-from utils import insert_dtc, automaker_db_tables_names_dict, extract_dtcs_from_file, dtc_exists, delete_dtc
+from utils import insert_dtc, automaker_db_tables_names_dict, dtc_exists, delete_dtc
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -36,46 +35,6 @@ if st.button("Add DTC", type="primary"):            # Button to update the db
                 st.success(f"{code.upper()} added to {table_name} sucessfully!")
         except Exception as e:
             st.error(f"Error inserting DTC: {e}")
-
-st.divider()
-st.subheader("Bulk Import from PDF")
-
-uploaded_file = st.file_uploader("Upload PDF", type="pdf")
-# Build table options from the existing dict + generic
-automakers = list(automaker_db_tables_names_dict.values())
-
-
-# Initialize the session_state with a standaed value
-if "bulk_automaker" not in st.session_state:
-    st.session_state["bulk_automaker"] = automakers[0]
-
-bulk_automaker = st.selectbox("Automaker (bulk)", automakers, key="bulk_automaker")
-
-if uploaded_file and st.button("Extract from PDF"):
-    with st.spinner("Extracting..."):
-        dtcs = extract_dtcs_from_file(uploaded_file)
-        st.session_state["bulk_dtcs"] = dtcs
-        st.session_state["bulk_table"] = next(
-            k for k, v in automaker_db_tables_names_dict.items() if v == bulk_automaker
-        )
-
-if "bulk_dtcs" in st.session_state:
-    st.write(f"Found {len(st.session_state['bulk_dtcs'])} DTCs:")
-
-    df = pd.DataFrame(st.session_state["bulk_dtcs"])
-    df.insert(0, "skip", False)         # Checkbox column - True = skip, False = insert
-
-    edited_df = st.data_editor(df, use_container_width=True)
-
-    if st.button("Insert All into Database", type="primary"):
-        try:
-            to_insert = edited_df[~edited_df["skip"]]
-            for _, row in to_insert.iterrows():
-                insert_dtc(bulk_automaker, st.session_state["bulk_table"], row["code"], row["description"])
-            st.success(f"{len(to_insert)} DTCs inserted successfully!")
-            del st.session_state["bulk_dtcs"]
-        except Exception as e:
-            st.error(f"Error: {e}")
 
 st.divider()
 
