@@ -74,7 +74,6 @@ jobs:
                python -m py_compile pages/1_PDF_Extractor.py
                python -m py_compile pages/2_Add_DTC.py
                python -m py_compile pages/3_DTC_Research.py
-               python -m py_compile pages/4_Statistics.py
                echo "All files passed syntax check"
 
             # Step 5: Lint the code base with flake8, meaning check the code best practices

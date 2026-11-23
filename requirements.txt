@@ -3,10 +3,10 @@ ipykernel==7.2.0
 notebook==7.6.3
 pandas==3.0.3
 pdf2image==1.17.0
-pdfplumber==0.11.9
-pillow==12.3.0
+pdfplumber==0.11.11
+pillow==13.0.0
 psycopg[binary]
 pytesseract==0.3.13
 python-dotenv==1.2.2
 requests==2.34.2
-streamlit==1.57.0
+streamlit==1.67.0

@@ -225,27 +225,33 @@ docker run -p 8502:8502 automotive-tool:v1
 ```
 
 - Make the changes on the application and run the following commands:
-Export local database to a file:
+Export local database to a file by running the following command ON
+POWERSHELL:
 ```bash
 & "C:\Program Files\PostgreSQL\17\bin\pg_dump.exe" -U postgres -d prescreen_diag_data_api -F c -f dump.dump
 ```
 
-Copy the dump file into the container:
+Copy the dump file into the container by running the following command ON
+POWERSHELL:
 ```bash
 docker cp dump.dump dtc-form-automation-db-1:/dump.dump
 ```
 
-Restore the data inside the container:
+Restore the data inside the container by running the following command ON
+POWERSHELL:
 ```bash
 docker exec dtc-form-automation-db-1 pg_restore -U postgres -d prescreen_diag_data_api -v /dump.dump
 ```
 
+**Keep requirements.txt as it is, NO CHANGES NEEDED.**
+**Make sure utils.py has import psycopg as pg to run docker build -t...**
 ```bash
 docker build -t automotive-tool:vNumber .
 ```
 
-**HOST_NAME=host.docker.internal**: passing credentials when running the application
-**host.docker.internal** points to the credentials to my machine
+**HOST_NAME=host.docker.internal**: change the host name to **host.docker.internal** 
+before run docker run -p ... command because it points to the credentials to my machine
+**Make sure all containers are stopped before running docker run... command**
 ```bash
 docker run -p 8502:8502 --env-file .env automotive-tool:v1
 ```
