@@ -2,7 +2,7 @@ import io
 import re
 import os
 import requests
-import psycopg as pg
+import psycopg as pg    # import psycopg as pg to run docker build -t...
 import pytesseract
 import traceback
 from pdf2image import convert_from_bytes
@@ -119,7 +119,7 @@ def extract_from_pdf(url):
     # Larger letters -> lower DPI is sufficient -> already enough pixels to recognize them
     # DPI and letter size are inversely proportional - the smaller the test,
     # the higher the DPI needed to capture it accurately.
-    for dpi in [600, 200, 100]:
+    for dpi in [600, 300, 100]:
         # Return to the beginning of the page
         pdf_bytes.seek(0)
         images_page1 = convert_from_bytes(pdf_bytes.read(), first_page=1, last_page=1, dpi=dpi)
@@ -148,7 +148,7 @@ def extract_from_pdf(url):
 
     # Page 2
     # Scalability performance O(1), meaning iterate over the dpi list once (1) until valid content is captured
-    for dpi in [600, 200, 100]:
+    for dpi in [600, 300, 100]:
         pdf_bytes.seek(0)
         images_page2 = convert_from_bytes(pdf_bytes.read(), first_page=2, last_page=2, dpi=dpi)
         ocr_text_page2 = pytesseract.image_to_string(images_page2[0])
